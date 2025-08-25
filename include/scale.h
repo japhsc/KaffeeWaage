@@ -16,6 +16,10 @@ public:
   int32_t rawCounts() const { return weight_raw_; }           // raw minus tare
   int32_t rawNoTare() const { return last_raw_no_tare_; }     // raw without tare
 
+  // Tare persistence helpers
+  int32_t tareRaw() const { return tare_raw_; }
+  void setTareRaw(int32_t v) { tare_raw_ = v; }
+
   // Stability
   bool isStable() const { return stable_; }
   int32_t lastMg() const { return last_mg_; }

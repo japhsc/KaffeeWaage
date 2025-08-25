@@ -11,7 +11,8 @@ void Scale::begin(uint8_t dtPin, uint8_t sckPin){
 }
 
 void Scale::tare(){
-  tare_raw_ = weight_raw_ + tare_raw_; // equivalent to capture current raw as new tare baseline
+  // Capture current raw as new baseline; allows negative readings later
+  tare_raw_ = weight_raw_ + tare_raw_;
 }
 
 void Scale::update(){

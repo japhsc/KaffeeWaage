@@ -1,6 +1,6 @@
 #include "controller.h"
-#include "config.h"
 #include "utils.h"
+#include "storage.h"
 
 void Controller::begin(Scale* sc, Encoder* enc, Buttons* btn, Display* disp, Relay* rel){
   sc_ = sc; enc_ = enc; btn_ = btn; disp_ = disp; rel_ = rel;
@@ -12,12 +12,14 @@ void Controller::update(){
   enc_->update();
   btn_->update();
 
-  // --- long-press: enter/advance calibration ---
+  // --- long-press: enter/advance calibration (requires stability) ---
   static int32_t cal_raw0 = 0; // persistent across calls
   static uint32_t calDoneUntil = 0;
 
   if (enc_->tareLongPressed()) {
-    if (state_ == AppState::IDLE || state_ == AppState::SHOW_SETPOINT) {
+    if (REQUIRE_STABLE_FOR_CAL && !sc_->isStable()) {
+      // ignore long-press until stable
+    } else if (state_ == AppState::IDLE || state_ == AppState::SHOW_SETPOINT) {
       // Capture zero point and move to span prompt
       cal_raw0 = sc_->rawNoTare();
       state_ = AppState::CAL_SPAN;
@@ -31,6 +33,7 @@ void Controller::update(){
       int32_t mg_per_count_q16 = (int32_t)( num / (int64_t)( (dcounts>0)? dcounts : -dcounts ) );
       if (mg_per_count_q16 <= 0) mg_per_count_q16 = CAL_MG_PER_COUNT_Q16; // fallback
       sc_->setCalMgPerCountQ16(mg_per_count_q16);
+      storage::saveCalQ16(mg_per_count_q16);
       // brief done screen
       state_ = AppState::DONE_HOLD; calDoneUntil = millis() + DONE_HOLD_MS;
     }
@@ -45,8 +48,20 @@ void Controller::update(){
     if(state_ == AppState::IDLE) state_ = AppState::SHOW_SETPOINT;
   }
 
+  // --- save setpoint when user stops turning (on timeout exit) ---
+  if(state_ == AppState::SHOW_SETPOINT && millis() > tShowUntil_){
+    state_ = AppState::IDLE;
+    storage::saveSetpointMg(setpoint_mg_);
+  }
+
   // --- tare (short press) ---
-  if(enc_->tarePressed()) sc_->tare();
+  if(enc_->tarePressed()){
+    bool measuring = (state_ == AppState::MEASURING);
+    if(!measuring && (!REQUIRE_STABLE_FOR_TARE || sc_->isStable())){
+      sc_->tare();
+      storage::saveTareRaw(sc_->tareRaw());
+    }
+  }
 
   // --- start/stop ---
   if(btn_->startPressed()){
@@ -67,7 +82,7 @@ void Controller::update(){
   switch(state_){
     case AppState::IDLE: break;
     case AppState::SHOW_SETPOINT:
-      if(millis() > tShowUntil_) state_ = AppState::IDLE;
+      // handled above for timeout/persist
       break;
     case AppState::MEASURING: {
       int32_t effective = setpoint_mg_ - CUTOFF_OFFSET_MG;
@@ -84,8 +99,8 @@ void Controller::update(){
       break;
     case AppState::ERROR_STATE:
       break;
-    case AppState::CAL_ZERO: // unused placeholder (flow jumps directly to CAL_SPAN)
-      state_ = AppState::CAL_SPAN;
+    case AppState::CAL_ZERO:
+      state_ = AppState::CAL_SPAN; // unused placeholder
       break;
   }
 

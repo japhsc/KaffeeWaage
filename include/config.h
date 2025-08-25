@@ -66,3 +66,13 @@ constexpr uint32_t STAB_DWELL_MS       = 300;  // must remain quiet for this lon
 // ---------------- Calibration (long-press flow) ----------------
 constexpr uint32_t ENC_LONGPRESS_MS     = 1500; // hold encoder SW this long
 constexpr float    CAL_SPAN_MASS_G      = 22.0f; // known weight for span step, e.g. 22g
+
+// ---------------- Persistence (NVS) ----------------
+constexpr char NVS_NAMESPACE[] = "coffee";
+constexpr char KEY_CAL_Q16[]   = "cal_q16";
+constexpr char KEY_TARE_RAW[]  = "tare_raw";
+constexpr char KEY_SETPOINT[]  = "setpoint";
+
+// Behavior flags
+constexpr bool REQUIRE_STABLE_FOR_TARE = true;
+constexpr bool REQUIRE_STABLE_FOR_CAL  = true;

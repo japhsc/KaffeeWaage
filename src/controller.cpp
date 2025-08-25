@@ -1,0 +1,106 @@
+#include "controller.h"
+#include "config.h"
+#include "utils.h"
+
+void Controller::begin(Scale* sc, Encoder* enc, Buttons* btn, Display* disp, Relay* rel){
+  sc_ = sc; enc_ = enc; btn_ = btn; disp_ = disp; rel_ = rel;
+}
+
+void Controller::update(){
+  // --- update peripherals ---
+  sc_->update();
+  enc_->update();
+  btn_->update();
+
+  // --- long-press: enter/advance calibration ---
+  static int32_t cal_raw0 = 0; // persistent across calls
+  static uint32_t calDoneUntil = 0;
+
+  if (enc_->tareLongPressed()) {
+    if (state_ == AppState::IDLE || state_ == AppState::SHOW_SETPOINT) {
+      // Capture zero point and move to span prompt
+      cal_raw0 = sc_->rawNoTare();
+      state_ = AppState::CAL_SPAN;
+    } else if (state_ == AppState::CAL_SPAN) {
+      // Capture span point, compute factor (Q16): mg_per_count_q16 = (span_mg << 16) / dcounts
+      int32_t raw1 = sc_->rawNoTare();
+      int32_t dcounts = raw1 - cal_raw0;
+      if (dcounts == 0) dcounts = 1; // avoid div/0
+      int32_t span_mg = lround_mg(CAL_SPAN_MASS_G);
+      int64_t num = ((int64_t)span_mg) << 16;
+      int32_t mg_per_count_q16 = (int32_t)( num / (int64_t)( (dcounts>0)? dcounts : -dcounts ) );
+      if (mg_per_count_q16 <= 0) mg_per_count_q16 = CAL_MG_PER_COUNT_Q16; // fallback
+      sc_->setCalMgPerCountQ16(mg_per_count_q16);
+      // brief done screen
+      state_ = AppState::DONE_HOLD; calDoneUntil = millis() + DONE_HOLD_MS;
+    }
+  }
+
+  // --- handle encoder setpoint ---
+  int32_t dmg = enc_->consumeDeltaMg();
+  if(dmg != 0){
+    int32_t maxMg = lround_mg(SETPOINT_MAX_G);
+    setpoint_mg_ = clamp_i32(setpoint_mg_ + dmg, 0, maxMg);
+    tShowUntil_ = millis() + SHOW_SP_MS;
+    if(state_ == AppState::IDLE) state_ = AppState::SHOW_SETPOINT;
+  }
+
+  // --- tare (short press) ---
+  if(enc_->tarePressed()) sc_->tare();
+
+  // --- start/stop ---
+  if(btn_->startPressed()){
+    if(state_ == AppState::MEASURING){
+      rel_->set(false);
+      state_ = AppState::DONE_HOLD; tDoneUntil_ = millis() + DONE_HOLD_MS;
+    } else if (state_ == AppState::IDLE || state_ == AppState::SHOW_SETPOINT) {
+      // start
+      rel_->set(true);
+      state_ = AppState::MEASURING; tMeasureUntil_ = millis() + MEASURE_TIMEOUT_MS;
+    } else if (state_ == AppState::CAL_SPAN) {
+      // allow abort of calibration with start button
+      state_ = AppState::IDLE;
+    }
+  }
+
+  // --- state machine ---
+  switch(state_){
+    case AppState::IDLE: break;
+    case AppState::SHOW_SETPOINT:
+      if(millis() > tShowUntil_) state_ = AppState::IDLE;
+      break;
+    case AppState::MEASURING: {
+      int32_t effective = setpoint_mg_ - CUTOFF_OFFSET_MG;
+      if(sc_->filteredMg() + HYSTERESIS_MG >= effective || millis() > tMeasureUntil_){
+        rel_->set(false);
+        state_ = AppState::DONE_HOLD; tDoneUntil_ = millis() + DONE_HOLD_MS;
+      }
+    } break;
+    case AppState::DONE_HOLD:
+      if (millis() > tDoneUntil_) state_ = AppState::IDLE;
+      break;
+    case AppState::CAL_SPAN:
+      // stay here until second long-press or abort; just show prompt
+      break;
+    case AppState::ERROR_STATE:
+      break;
+    case AppState::CAL_ZERO: // unused placeholder (flow jumps directly to CAL_SPAN)
+      state_ = AppState::CAL_SPAN;
+      break;
+  }
+
+  // --- display ---
+  if(!sc_->ok()) {
+    disp_->showError();
+  } else if(state_ == AppState::SHOW_SETPOINT){
+    disp_->showSetpointMg(setpoint_mg_);
+  } else if(state_ == AppState::CAL_SPAN){
+    disp_->showCalSpan();
+  } else if(state_ == AppState::DONE_HOLD && millis() < calDoneUntil) {
+    disp_->showCalDone();
+  } else if(state_ == AppState::DONE_HOLD || state_ == AppState::MEASURING || state_ == AppState::IDLE){
+    disp_->showWeightMg(sc_->filteredMg(), sc_->isStable());
+  } else {
+    disp_->showError();
+  }
+}

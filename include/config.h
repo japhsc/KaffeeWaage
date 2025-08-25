@@ -76,3 +76,6 @@ constexpr char KEY_SETPOINT[]  = "setpoint";
 // Behavior flags
 constexpr bool REQUIRE_STABLE_FOR_TARE = true;
 constexpr bool REQUIRE_STABLE_FOR_CAL  = true;
+
+// Hint timing
+constexpr uint32_t HINT_HOLD_MS        = 600;

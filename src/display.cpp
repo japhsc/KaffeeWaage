@@ -52,3 +52,4 @@ void Display::showError(){ clear(); putChar(7,'E'); putChar(6,'r'); putChar(5,'r
 void Display::showCalZero(){ clear(); putChar(7,'C'); putChar(6,'A'); putChar(5,'L'); putChar(4,'0'); }
 void Display::showCalSpan(){ clear(); putChar(7,'S'); putChar(6,'P'); putChar(5,'A'); putChar(4,'n'); }
 void Display::showCalDone(){ clear(); putChar(7,'d'); putChar(6,'o'); putChar(5,'n'); putChar(4,'E'); }
+void Display::showHintHold(){ clear(); putChar(7,'H'); putChar(6,'o'); putChar(5,'L'); putChar(4,'d'); }

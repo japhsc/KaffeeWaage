@@ -11,6 +11,7 @@ public:
   void showCalZero();
   void showCalSpan();
   void showCalDone();
+  void showHintHold();
   void clear();
 private:
   LedControl lc_{-1,-1,-1,1};

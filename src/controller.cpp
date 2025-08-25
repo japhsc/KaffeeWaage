@@ -1,4 +1,5 @@
 #include "controller.h"
+#include "config.h"
 #include "utils.h"
 #include "storage.h"
 
@@ -12,13 +13,15 @@ void Controller::update(){
   enc_->update();
   btn_->update();
 
+  static uint32_t hintUntil = 0; // transient UI hint window
+
   // --- long-press: enter/advance calibration (requires stability) ---
   static int32_t cal_raw0 = 0; // persistent across calls
   static uint32_t calDoneUntil = 0;
 
   if (enc_->tareLongPressed()) {
     if (REQUIRE_STABLE_FOR_CAL && !sc_->isStable()) {
-      // ignore long-press until stable
+      hintUntil = millis() + HINT_HOLD_MS; // show HOLD
     } else if (state_ == AppState::IDLE || state_ == AppState::SHOW_SETPOINT) {
       // Capture zero point and move to span prompt
       cal_raw0 = sc_->rawNoTare();
@@ -26,8 +29,7 @@ void Controller::update(){
     } else if (state_ == AppState::CAL_SPAN) {
       // Capture span point, compute factor (Q16): mg_per_count_q16 = (span_mg << 16) / dcounts
       int32_t raw1 = sc_->rawNoTare();
-      int32_t dcounts = raw1 - cal_raw0;
-      if (dcounts == 0) dcounts = 1; // avoid div/0
+      int32_t dcounts = raw1 - cal_raw0; if (dcounts == 0) dcounts = 1;
       int32_t span_mg = lround_mg(CAL_SPAN_MASS_G);
       int64_t num = ((int64_t)span_mg) << 16;
       int32_t mg_per_count_q16 = (int32_t)( num / (int64_t)( (dcounts>0)? dcounts : -dcounts ) );
@@ -57,9 +59,13 @@ void Controller::update(){
   // --- tare (short press) ---
   if(enc_->tarePressed()){
     bool measuring = (state_ == AppState::MEASURING);
-    if(!measuring && (!REQUIRE_STABLE_FOR_TARE || sc_->isStable())){
+    if(measuring){
+      hintUntil = millis() + HINT_HOLD_MS; // blocked during measuring
+    } else if(!REQUIRE_STABLE_FOR_TARE || sc_->isStable()){
       sc_->tare();
       storage::saveTareRaw(sc_->tareRaw());
+    } else {
+      hintUntil = millis() + HINT_HOLD_MS; // ask user to hold still
     }
   }
 
@@ -102,6 +108,12 @@ void Controller::update(){
     case AppState::CAL_ZERO:
       state_ = AppState::CAL_SPAN; // unused placeholder
       break;
+  }
+
+  // --- display (hint overlay) ---
+  if (millis() < hintUntil) {
+    disp_->showHintHold();
+    return;
   }
 
   // --- display ---

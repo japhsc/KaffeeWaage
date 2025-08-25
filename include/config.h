@@ -79,3 +79,14 @@ constexpr bool REQUIRE_STABLE_FOR_CAL  = true;
 
 // Hint timing
 constexpr uint32_t HINT_HOLD_MS        = 600;
+
+const char* WIFI_SSID  = "SSID";
+const char* WIFI_PASS  = "PASSWORD";
+
+const char* FRITZ_BASE = "http://fritz.box";
+
+const char* FRITZ_USER = "username";
+const char* FRITZ_PASS = "password";
+
+// AIN of the plug
+const char* AIN   = "AIN_0123456789";

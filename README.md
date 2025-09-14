@@ -12,3 +12,5 @@
 
 > Offsets are compile-time constants as requested: `CUTOFF_OFFSET_MG` and `SCALE_OFFSET_COUNTS` / `SCALE_OFFSET_MG`.
 
+## Issues:
+[x] Make "stable detection" more robust

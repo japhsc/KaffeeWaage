@@ -59,7 +59,7 @@ constexpr uint32_t DEBOUNCE_MS          = 25;
 
 // ---------------- Stability detection ----------------
 constexpr uint8_t  STAB_WINDOW_SAMPLES = 10;   // 1.0 s at 10 Hz
-constexpr int32_t  STAB_STDDEV_MG      = 100;   // 0.10 g - prev 0.03g
+constexpr int32_t  STAB_STDDEV_MG      = 30;   // 0.03g
 constexpr int32_t  STAB_P2P_MG         = 100;  // 0.10 g
 constexpr uint32_t STAB_DWELL_MS       = 300;  // must remain quiet for this long
 

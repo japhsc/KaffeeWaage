@@ -35,6 +35,8 @@ void Encoder::update() {
             step_g = ENC_STEP_MED_G;
         int32_t step_mg = lround_mg(step_g);
         delta_mg_ += (d > 0 ? +step_mg : -step_mg);
+
+        // Serial.printf("Enc: d=%d tps=%.1f step=%.1f g dt=%.3f s\n", d, tps, step_g, dt);
     }
 
     // --- SW debounce & press type ---

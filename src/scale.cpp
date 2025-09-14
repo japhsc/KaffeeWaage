@@ -55,18 +55,28 @@ void Scale::update() {
     if (wcount_ == STAB_WINDOW_SAMPLES) {
         int64_t sum = 0, sumsq = 0;
         int32_t mn = INT32_MAX, mx = INT32_MIN;
+
+        // Compute sum, min, max, mean
         for (uint8_t i = 0; i < STAB_WINDOW_SAMPLES; ++i) {
             int32_t v = win_[i];
             sum += v;
-            sumsq += (int64_t)v * v;
             if (v < mn) mn = v;
             if (v > mx) mx = v;
         }
-        int32_t mean = (int32_t)(sum / STAB_WINDOW_SAMPLES);
-        int64_t ex2 = sumsq / STAB_WINDOW_SAMPLES;
-        int64_t var = ex2 - (int64_t)mean * mean;
-        if (var < 0) var = 0;
-        int32_t stdmg = (int32_t)sqrt((double)var);
+        double mean = (double)sum / STAB_WINDOW_SAMPLES;
+
+        // Compute variance
+        double var_sum = 0.0;
+        for (uint8_t i = 0; i < STAB_WINDOW_SAMPLES; ++i) {
+            double diff = win_[i] - mean;
+            var_sum += diff * diff;
+        }
+
+        // Population variance (divide by N); use N-1 if you want sample variance
+        double var = var_sum / STAB_WINDOW_SAMPLES;
+        if (var < 0.0) var = 0.0;
+
+        int32_t stdmg = (int32_t)std::sqrt(var);
         int32_t p2p = mx - mn;
 
         bool quiet = (stdmg <= STAB_STDDEV_MG) && (p2p <= STAB_P2P_MG);
@@ -82,8 +92,7 @@ void Scale::update() {
             stable_since_ = 0;  // reset so next quiet period starts timing
         }
 
-        // Serial.printf("Std. dev: %d, p2p: %d, stable: %d, mg: %d\n", stdmg,
-        // p2p, stable_, mg);
+        // Serial.printf("Std. dev: %d, p2p: %d, stable: %d, mg: %d\n", stdmg, p2p, stable_, mg);
     } else {
         stable_ = false;  // not enough samples yet
         stable_since_ = 0;

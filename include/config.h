@@ -46,13 +46,13 @@ constexpr uint32_t DONE_HOLD_MS         = 1500;
 constexpr uint32_t MEASURE_TIMEOUT_MS   = 30000;
 
 // Encoder acceleration (ticks per second thresholds)
-constexpr float ENC_TPS_FAST  = 15.0f; // > fast => 1.0 g
-constexpr float ENC_TPS_MED   = 5.0f;  // > med  => 0.5 g
+constexpr float ENC_TPS_FAST  = 100.0f; // > fast => 1.0 g
+constexpr float ENC_TPS_MED   = 50.0f;  // > med  => 0.5 g
 
 // Step sizes (grams)
-constexpr float ENC_STEP_SLOW_G = 0.1f;
-constexpr float ENC_STEP_MED_G  = 0.5f;
-constexpr float ENC_STEP_FAST_G = 1.0f;
+constexpr float ENC_STEP_SLOW_G = 0.025f;
+constexpr float ENC_STEP_MED_G  = 0.1f;
+constexpr float ENC_STEP_FAST_G = 0.5f;
 
 // Debounce
 constexpr uint32_t DEBOUNCE_MS          = 25;

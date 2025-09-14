@@ -2,10 +2,8 @@
 
 size_t SwitchWorker::queueDepth() const { return uxQueueMessagesWaiting(_q); }
 
-// Initialize: connect to FRITZ!Box and start task
+// Initialize: start task
 bool SwitchWorker::begin() {
-    sid = _fritz.login();
-    if (!sid.length()) return false;
     _q = xQueueCreate(12, sizeof(Request));
     if (!_q) return false;
     BaseType_t ok = xTaskCreatePinnedToCore(_taskThunk, "SwitchWorker", 8192,
@@ -43,6 +41,10 @@ bool SwitchWorker::enqueue(Cmd c, const char* ain) {
 
 // Task body
 void SwitchWorker::taskLoop() {
+    // Init FritzAHA client
+    sid = _fritz.login();
+    if (!sid.length()) return;
+
     Request r;
     for (;;) {
         if (xQueueReceive(_q, &r, portMAX_DELAY) == pdTRUE) {

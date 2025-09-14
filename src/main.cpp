@@ -44,11 +44,7 @@ void setup() {
     }
     Serial.println("\nWiFi connected!");
 
-    if (!gWorker.begin()) {
-        Serial.println("Failed to init SwitchWorker (login/task/queue).");
-        return;
-    }
-    Serial.println("SID: " + gWorker.sid);
+    gWorker.begin();
 
     // Load persisted values
     int32_t q16 = storage::loadCalQ16(CAL_MG_PER_COUNT_Q16);

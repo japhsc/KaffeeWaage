@@ -6,17 +6,18 @@
 constexpr uint8_t PIN_HX_DT   = 19;
 constexpr uint8_t PIN_HX_SCK  = 18;
 // MAX7219 (LedControl)
-constexpr uint8_t PIN_MAX_DIN = 23;
+constexpr uint8_t PIN_MAX_DIN = 22;
 constexpr uint8_t PIN_MAX_CLK = 5;
 constexpr uint8_t PIN_MAX_CS  = 15;
 // KY-040 encoder
 constexpr uint8_t PIN_ENC_A   = 32;
 constexpr uint8_t PIN_ENC_B   = 33;
-constexpr uint8_t PIN_ENC_SW  = 26;     // Tare button (push)
+constexpr uint8_t PIN_ENC_SW  = 25;     // Tare button (push)
 // Start button
-constexpr uint8_t PIN_BTN_START = 0;    // Active LOW (to GND)
-// Dummy relay placeholder (kept LOW)
-constexpr uint8_t PIN_RELAY      = 2;
+constexpr uint8_t PIN_BTN_START = 23;   // Active LOW (to GND)
+// Relay pins (kept LOW, active HIGH)
+constexpr uint8_t PIN_RELAY     = 26;
+constexpr uint8_t PIN_RELAY_LED = 2;
 
 // ---------------- Display ----------------
 // If your module is wired right-to-left, keep true. Flip if your digits appear mirrored.

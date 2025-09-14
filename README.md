@@ -1,3 +1,32 @@
+## Wiring
+### Display
+- VCC -> 5V
+- GND -> GND
+- DIN -> GPIO 23 -> GPIO 22
+- CS  -> GPIO 15
+- CLK -> GPIO 5
+
+### Rotary Encoder
+- CLK -> GPIO 32
+- DT  -> GPIO 33
+- SW  -> GPIO 25
+- +   -> 3V3
+- GND -> GND
+
+### HX711
+- GND -> GND
+- DT  -> GPIO 19
+- SCK -> GPIO 18
+- VCC -> 3V3
+
+### Buttons
+- GPIO 0   // BOOT
+- GPIO 23
+
+### Relay
+- GPIO 2   // build-in LED
+- GPIO 26  // relay pin
+
 ## 🔧 Build & flash
 1) Put these files into a new folder `coffee-scale-esp32/` exactly as shown.
 2) Run in that folder:

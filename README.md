@@ -14,3 +14,6 @@
 
 ## Issues:
 [x] Make "stable detection" more robust
+[x] Indicate wifi connection on display
+[x] Make wifi connection in parallel
+[x] Add all possible character

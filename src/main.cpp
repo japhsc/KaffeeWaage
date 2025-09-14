@@ -35,14 +35,26 @@ void setup() {
     gButtons.begin(PIN_BTN_START);
     gRelay.begin(PIN_RELAY);
 
+    gDisplay.showStartup();
+
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     Serial.print("WiFi");
-    while (WiFi.status() != WL_CONNECTED) {
+    gDisplay.showWifiConnecting();
+    int wifi_attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && wifi_attempts < 20) {
         delay(300);
         Serial.print(".");
+        wifi_attempts++;
+        gDisplay.showWifiConnecting(wifi_attempts);
+    }
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("\nFailed to connect to WiFi.");
+        gDisplay.showError();
+        return;
     }
     Serial.println("\nWiFi connected!");
+    gDisplay.showWifiConnected();
 
     gWorker.begin();
 

@@ -97,3 +97,32 @@ void Display::showHintHold() {
     putChar(5, 'L');
     putChar(4, 'd');
 }
+void Display::showStartup() {
+    clear();
+    putChar(7, 'C');
+    putChar(6, 'o');
+    putChar(5, 'f');
+    putChar(4, 'f');
+    putChar(3, 'e');
+    putChar(2, 'e');
+}
+void Display::showWifiConnecting(const int attempt) {
+    clear();
+    putChar(7, 'A');
+    putChar(6, 'i');
+    putChar(5, 'r');
+    putChar(4, ' ');
+    for (int i = 0; i < attempt && i < 4; i++)
+        putChar(3 - i, '.');
+}
+void Display::showWifiConnected() {
+    clear();
+    putChar(7, 'C');
+    putChar(6, 'o');
+    putChar(5, 'n');
+    putChar(4, 'n');
+    putChar(3, 'E');
+    putChar(2, 'C');
+    putChar(1, 't');
+    putChar(0, 'd');
+}

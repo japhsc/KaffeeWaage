@@ -26,10 +26,10 @@ constexpr uint8_t DISPLAY_INTENSITY  = 4;   // 0..15
 
 // ---------------- Scale & filtering ----------------
 // Compile-time offsets
-constexpr int32_t CUTOFF_OFFSET_MG      = 0;    // stop early by this many mg (0.3 g => 300)
-constexpr int32_t SCALE_OFFSET_COUNTS   = -326407;    // raw baseline offset (preferred)
+constexpr int32_t CUTOFF_OFFSET_MG      = 1000;     // stop early by this many mg (0.3 g => 300)
+constexpr int32_t SCALE_OFFSET_COUNTS   = -326407;  // raw baseline offset (preferred)
 // If you prefer mg-level offset after scaling, set above to 0 and use this instead.
-constexpr int32_t SCALE_OFFSET_MG       = 0;    // added after scaling
+constexpr int32_t SCALE_OFFSET_MG       = 0;        // added after scaling
 
 // Calibration factor (Q16 fixed-point): mg per raw count << 16
 // Example: 22000/(-155332+326407) = 0.1286 mg/count => (int32)((0.1286f * 65536.0f) + 0.5f) = 9437

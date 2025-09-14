@@ -82,6 +82,8 @@ constexpr bool REQUIRE_STABLE_FOR_CAL  = true;
 constexpr uint32_t HINT_HOLD_MS        = 600;
 
 // ---------------- WiFi & FRITZ!Box AHA ----------------
+// #define USE_WIFI      // comment out to disable WiFi and AHA relay control
+#ifdef USE_WIFI
 constexpr char WIFI_SSID[]  = "SSID";
 constexpr char WIFI_PASS[]  = "PASSWORD";
 
@@ -92,3 +94,4 @@ constexpr char FRITZ_PASS[] = "password";
 
 // AIN of the AHA device to control
 constexpr char FRITZ_AIN[]   = "AIN_0123456789";
+#endif

@@ -1,7 +1,5 @@
 #include "relay.h"
 
-#include "config.h"
-
 void Relay::begin(uint8_t pin) {
     pin_ = pin;
     on_ = false;
@@ -16,6 +14,4 @@ void Relay::set(bool on) {
     if (pin_ != 255) {
         digitalWrite(pin_, on);
     }
-
-    _worker.toggle(ain_, on);
 }

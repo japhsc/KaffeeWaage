@@ -1,13 +1,20 @@
 #include <Arduino.h>
+
+#include "config.h"
+
+#ifdef USE_WIFI
 #include <WiFi.h>
 
 #include "FritzAHA.h"
+#include "wrelay.h"
+#else
+#include "relay.h"
+#endif
+
 #include "buttons.h"
-#include "config.h"
 #include "controller.h"
 #include "display.h"
 #include "encoder.h"
-#include "relay.h"
 #include "scale.h"
 #include "storage.h"
 #include "switch.h"
@@ -18,9 +25,13 @@ Buttons gButtons;
 Display gDisplay;
 Controller gController;
 
+#ifdef USE_WIFI
 FritzAHA gFritz(FRITZ_BASE, FRITZ_USER, FRITZ_PASS);
 SwitchWorker gWorker(gFritz);
-Relay gRelay(gWorker, FRITZ_AIN);
+WifiRelay gRelay(gWorker, FRITZ_AIN);
+#else
+Relay gRelay;
+#endif
 
 void setup() {
     Serial.begin(115200);
@@ -33,10 +44,15 @@ void setup() {
     gScale.begin(PIN_HX_DT, PIN_HX_SCK);
     gEncoder.begin(PIN_ENC_A, PIN_ENC_B, PIN_ENC_SW);
     gButtons.begin(PIN_BTN_START);
+#ifdef USE_WIFI
+    gRelay.begin(PIN_RELAY_LED);
+#else
     gRelay.begin(PIN_RELAY);
+#endif
 
     gDisplay.showStartup();
 
+#ifdef USE_WIFI
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     Serial.print("WiFi");
@@ -57,6 +73,7 @@ void setup() {
     gDisplay.showWifiConnected();
 
     gWorker.begin();
+#endif
 
     // Load persisted values
     int32_t q16 = storage::loadCalQ16(CAL_MG_PER_COUNT_Q16);

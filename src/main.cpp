@@ -47,7 +47,7 @@ void setup() {
 #ifdef USE_WIFI
     gRelay.begin(PIN_RELAY_LED);
 #else
-    gRelay.begin(PIN_RELAY);
+    gRelay.begin(PIN_RELAY, PIN_RELAY_LED);
 #endif
 
     gDisplay.showStartup();

@@ -6,7 +6,9 @@
 
 class Scale {
    public:
+    // Initialize with data pin, clock pin, and HX711
     void begin(uint8_t dtPin, uint8_t sckPin);
+
     // Call often; samples every HX711_PERIOD_MS
     void update();
     bool ok() const { return ok_; }

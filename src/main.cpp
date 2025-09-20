@@ -35,24 +35,33 @@ Relay gRelay;
 
 void setup() {
     Serial.begin(115200);
-    delay(200);
+    while (!Serial) {
+        ; // wait for serial port to connect. Needed for native USB ports
+    }
+    Serial.println("Booting Coffee Scale...");
 
-    storage::begin();  // init NVS
+    // NVS init
+    storage::begin();
 
-    // Hardware init
+    // Display init
     gDisplay.begin(PIN_MAX_DIN, PIN_MAX_CLK, PIN_MAX_CS);
-    gScale.begin(PIN_HX_DT, PIN_HX_SCK);
-    gEncoder.begin(PIN_ENC_A, PIN_ENC_B, PIN_ENC_SW);
-    gButtons.begin(PIN_BTN_START);
-#ifdef USE_WIFI
-    gRelay.begin(PIN_RELAY_LED);
-#else
-    gRelay.begin(PIN_RELAY, PIN_RELAY_LED);
-#endif
-
     gDisplay.showStartup();
 
-#ifdef USE_WIFI
+    // HID init
+    gButtons.begin(PIN_BTN_START);
+    gEncoder.begin(PIN_ENC_A, PIN_ENC_B, PIN_ENC_SW);
+
+    // Scale init
+    gScale.begin(PIN_HX_DT, PIN_HX_SCK);
+
+#ifndef USE_WIFI
+    // Simple relay init with optional LED indicator
+    gRelay.begin(PIN_RELAY, PIN_RELAY_LED);
+#else
+    // WiFi relay init with LED indicator
+    gRelay.begin(PIN_RELAY_LED);
+
+    // WiFi init
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     Serial.print("WiFi");

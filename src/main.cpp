@@ -92,6 +92,9 @@ void setup() {
     int32_t sp = storage::loadSetpointMg(14000);
     gController.setSetpointMg(sp);
 
+    // For development: reset learned k_v
+    // storage::saveKv(0);
+
     gController.begin(&gScale, &gEncoder, &gButtons, &gDisplay, &gRelay);
 
     Serial.println("Coffee Scale ready.");

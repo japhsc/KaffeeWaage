@@ -22,14 +22,6 @@ void Controller::update() {
     btn_->update();
 
     static uint32_t hintUntil = 0;  // transient UI hint window
-    static uint32_t errSince = 0;   // debounce error display
-
-    // track error debounce
-    if (!sc_->ok()) {
-        if (errSince == 0) errSince = millis();
-    } else {
-        errSince = 0;
-    }
 
     // --- long-press: enter/advance calibration (requires stability) ---
     static int32_t cal_raw0 = 0;  // persistent across calls
@@ -159,10 +151,8 @@ void Controller::update() {
     if (millis() < tDispNext_) return;
     tDispNext_ = millis() + dispPeriod;
 
-    // --- display with error debounce ---
-    bool showErr = (!sc_->ok()) && (errSince != 0) &&
-                   ((millis() - errSince) > ERROR_DISPLAY_DEBOUNCE_MS);
-    if (showErr) {
+    // --- display ---
+    if (!sc_->ok()) {
         disp_->showError();
     } else if (state_ == AppState::SHOW_SETPOINT) {
         disp_->showSetpointMg(setpoint_mg_);

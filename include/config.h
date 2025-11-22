@@ -40,13 +40,21 @@ constexpr int32_t CAL_MG_PER_COUNT_Q16  = (int32_t)((0.1286f * 65536.0f) + 0.5f)
 // HX711 sampling periods (switch at runtime)
 constexpr uint16_t HX711_PERIOD_IDLE_MS = 100; // 10 SPS for quiet, stable display
 constexpr uint16_t HX711_PERIOD_FAST_MS = 13;  // ~80 SPS during measuring
-// Non-blocking read policy: only flag error if DRDY missing for this long
-constexpr uint32_t HX711_NOTREADY_TIMEOUT_MS = 500; // prevents 'Err' flicker
+// Non-blocking read policy: dynamic timeout based on detected rate
+constexpr uint32_t NOTREADY_MULT        = 3;   // x times expected period
+constexpr uint32_t NOTREADY_MARGIN_MS   = 10;  // extra slack
 // Startup grace: ignore HX711 readiness errors for this long after boot
 constexpr uint32_t HX711_STARTUP_GRACE_MS   = 1200;
 
 // Slow display filter
 constexpr uint8_t  IIR_ALPHA_DIV        = 4;   // alpha = 1/4 = 0.25
+
+// ---------------- Rate detection ----------------
+constexpr uint8_t  RATE_DETECT_SAMPLES  = 16;  // number of DRDY intervals to average
+constexpr uint32_t EXPECTED_80SPS_MS    = 13;
+constexpr uint32_t EXPECTED_10SPS_MS    = 100;
+constexpr uint32_t RD_MIN_MS            = 5;   // ignore absurd short intervals
+constexpr uint32_t RD_MAX_MS            = 200; // ignore absurd long intervals
 
 // ---------------- UX & limits ----------------
 constexpr float    SETPOINT_MAX_G       = 200.0f;

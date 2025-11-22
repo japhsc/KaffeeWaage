@@ -13,6 +13,12 @@ void Scale::begin(uint8_t dtPin, uint8_t sckPin) {
     setSamplePeriodMs(HX711_PERIOD_IDLE_MS);
     bootGraceUntil_ = millis() + HX711_STARTUP_GRACE_MS;
     notReadySince_ = 0;
+    // rate detection init
+    expected_period_ms_ = HX711_PERIOD_IDLE_MS;
+    fast_capable_ = false;
+    rd_count_ = 0;
+    rd_accum_ms_ = 0;
+    last_drdy_ms_ = 0;
 }
 
 void Scale::setSamplePeriodMs(uint16_t ms) { period_ms_ = ms; }
@@ -30,19 +36,47 @@ void Scale::update() {
     tPrev_ = now;
     tNext_ = now + period_ms_;
 
+    // Readiness & error policy
     if (!hx_.is_ready()) {
-        // don't immediately mark error; only after sustained absence and past
-        // boot grace
         if (notReadySince_ == 0) notReadySince_ = now;
-        if ((now - notReadySince_) > HX711_NOTREADY_TIMEOUT_MS &&
-            now > bootGraceUntil_)
+        // dynamic timeout based on detected/expected period
+        uint32_t dynTimeout =
+            (uint32_t)expected_period_ms_ * NOTREADY_MULT + NOTREADY_MARGIN_MS;
+        if ((now - notReadySince_) > dynTimeout && now > bootGraceUntil_)
             ok_ = false;
-        // reschedule soon to catch the next DRDY edge
-        tNext_ = now + 1;
+        tNext_ = now + 1;  // poll soon to catch next DRDY
         return;
     }
     notReadySince_ = 0;  // DRDY seen
     ok_ = true;
+
+    // --- Rate detection (measure DRDY intervals) ---
+    if (last_drdy_ms_ != 0) {
+        uint32_t d = now - last_drdy_ms_;
+        if (d >= RD_MIN_MS && d <= RD_MAX_MS) {
+            rd_accum_ms_ += d;
+            if (rd_count_ < 255) rd_count_++;
+        }
+        if (rd_count_ >= RATE_DETECT_SAMPLES &&
+            expected_period_ms_ == HX711_PERIOD_IDLE_MS) {
+            uint32_t avg = rd_accum_ms_ / rd_count_;
+            // classify as fast if closer to 13 ms than 100 ms
+            uint32_t diffFast = (avg > EXPECTED_80SPS_MS)
+                                    ? (avg - EXPECTED_80SPS_MS)
+                                    : (EXPECTED_80SPS_MS - avg);
+            uint32_t diffSlow = (avg > EXPECTED_10SPS_MS)
+                                    ? (avg - EXPECTED_10SPS_MS)
+                                    : (EXPECTED_10SPS_MS - avg);
+            if (diffFast * 3 < diffSlow) {  // require clear win
+                expected_period_ms_ = HX711_PERIOD_FAST_MS;
+                fast_capable_ = true;
+            } else {
+                expected_period_ms_ = HX711_PERIOD_IDLE_MS;
+                fast_capable_ = false;
+            }
+        }
+    }
+    last_drdy_ms_ = now;
 
     int32_t raw = hx_.read();
     raw -= SCALE_OFFSET_COUNTS;     // compile-time raw offset

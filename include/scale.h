@@ -14,6 +14,10 @@ class Scale {
 
     void setSamplePeriodMs(uint16_t ms);  // switch 10↔80 SPS
 
+    // Rate detection insight
+    bool fastCapable() const { return fast_capable_; }
+    uint16_t detectedPeriodMs() const { return expected_period_ms_; }
+
     bool ok() const { return ok_; }
     void tare();
 
@@ -54,7 +58,17 @@ class Scale {
     uint32_t notReadySince_ = 0;
     uint32_t bootGraceUntil_ = 0;
 
-    // Filtering: slow/display filter
+    // dynamic not-ready timeout target
+    uint16_t expected_period_ms_ =
+        HX711_PERIOD_IDLE_MS;  // updated after rate detect
+    bool fast_capable_ = false;
+
+    // rate detection accumulators
+    uint8_t rd_count_ = 0;
+    uint32_t rd_accum_ms_ = 0;
+    uint32_t last_drdy_ms_ = 0;
+
+    // slow/display filter
     int32_t buf_[3] = {0, 0, 0};
     uint8_t bi_ = 0;
     int32_t filt_mg_ = 0;

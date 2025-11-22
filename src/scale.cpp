@@ -49,6 +49,20 @@ void Scale::update() {
     drdy_pending_ = false;
     ok_ = true;
 
+    // debug: measure actual samples per second
+    /*
+    static uint32_t dbg_count = 0;
+    static uint32_t dbg_window_start = millis();
+    dbg_count++;
+    uint32_t win_ms = now - dbg_window_start;
+    if (win_ms >= 1000) {  // 1 s window
+        float sps = (win_ms > 0) ? (1000.0f * dbg_count / (float)win_ms) : 0.0f;
+        Serial.printf("HX711 SPS: %.1f\n", sps);
+        dbg_count = 0;
+        dbg_window_start = now;
+    }
+    */
+
     uint32_t prev_sample_ms = last_sample_ms_;
     int32_t raw = hx_.read();
     last_sample_ms_ = now;

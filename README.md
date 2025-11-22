@@ -49,7 +49,7 @@ ESP32-based coffee dose scale with HX711 load cell, MAX7219 7-seg display, rotar
 Most breakout boards ship the HX711 in 10 SPS mode (RATE pin tied to GND). For faster pours and better cutoff prediction, switch to 80 SPS: carefully desolder the RATE pin from GND and wire it to VDD/3V3 instead. Keep HX711 leads short and shielded; faster sampling can pick up more noise, so revisit `HX711_PERIOD_FAST_MS` / stability thresholds if needed.
 
 ## :rocket: Build & flash (PlatformIO)
-Run inside `coffee-scale-esp32/`:
+Run inside `KaffeeWaage/`:
 - `pio run` (build)
 - `pio run -t upload` (flash)
 - `pio device monitor` (serial)

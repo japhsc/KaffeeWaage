@@ -25,4 +25,11 @@ class Controller {
     AppState state_ = AppState::IDLE;
     int32_t setpoint_mg_ = 14000;  // default 14.0 g
     uint32_t tShowUntil_ = 0, tMeasureUntil_ = 0, tDoneUntil_ = 0;
+
+    // Learned spin-down coefficient (mg per g/s)
+    float k_v_mg_per_gps_ = 0.0f;
+    float last_v_stop_gps_ = 0.0f;
+
+    // display throttle
+    uint32_t tDispNext_ = 0;
 };

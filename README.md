@@ -46,3 +46,4 @@
 [x] Indicate wifi connection on display
 [x] Make wifi connection in parallel
 [x] Add all possible character
+[x] Error message on startup with line power

@@ -36,7 +36,7 @@ Relay gRelay;
 void setup() {
     Serial.begin(115200);
     while (!Serial) {
-        ; // wait for serial port to connect. Needed for native USB ports
+        ;  // wait for serial port to connect. Needed for native USB ports
     }
     Serial.println("Booting Coffee Scale...");
 
@@ -94,9 +94,9 @@ void setup() {
 
     gController.begin(&gScale, &gEncoder, &gButtons, &gDisplay, &gRelay);
 
-    Serial.println(
-        "Coffee Scale ready. Using persisted calibration/tare/setpoint if "
-        "available.");
+    Serial.println("Coffee Scale ready.");
+    Serial.println("Using persisted calibration/tare/setpoint if available.");
+    Serial.println("Dynamic cutoff enabled (80 SPS during measuring).");
 }
 
 void loop() {

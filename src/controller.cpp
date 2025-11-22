@@ -11,6 +11,8 @@ void Controller::begin(Scale* sc, Encoder* enc, Buttons* btn, Display* disp,
     btn_ = btn;
     disp_ = disp;
     rel_ = rel;
+    // load learned k_v (mg per g/s)
+    k_v_mg_per_gps_ = (float)storage::loadKv(0);
 }
 
 void Controller::update() {
@@ -20,6 +22,14 @@ void Controller::update() {
     btn_->update();
 
     static uint32_t hintUntil = 0;  // transient UI hint window
+    static uint32_t errSince = 0;   // debounce error display
+
+    // track error debounce
+    if (!sc_->ok()) {
+        if (errSince == 0) errSince = millis();
+    } else {
+        errSince = 0;
+    }
 
     // --- long-press: enter/advance calibration (requires stability) ---
     static int32_t cal_raw0 = 0;  // persistent across calls
@@ -91,6 +101,7 @@ void Controller::update() {
                    state_ == AppState::SHOW_SETPOINT) {
             // start
             rel_->set(true);
+            sc_->setSamplePeriodMs(HX711_PERIOD_FAST_MS);  // go fast
             state_ = AppState::MEASURING;
             tMeasureUntil_ = millis() + MEASURE_TIMEOUT_MS;
         } else if (state_ == AppState::CAL_SPAN) {
@@ -99,54 +110,67 @@ void Controller::update() {
         }
     }
 
-    // --- state machine ---
-    switch (state_) {
-        case AppState::IDLE:
-            break;
-        case AppState::SHOW_SETPOINT:
-            // handled above for timeout/persist
-            break;
-        case AppState::MEASURING: {
-            int32_t effective = setpoint_mg_ - CUTOFF_OFFSET_MG;
-            if (sc_->filteredMg() + HYSTERESIS_MG >= effective ||
-                millis() > tMeasureUntil_) {
-                rel_->set(false);
-                state_ = AppState::DONE_HOLD;
-                tDoneUntil_ = millis() + DONE_HOLD_MS;
-            }
-        } break;
-        case AppState::DONE_HOLD:
-            if (millis() > tDoneUntil_) state_ = AppState::IDLE;
-            break;
-        case AppState::CAL_SPAN:
-            // stay here until second long-press or abort; just show prompt
-            break;
-        case AppState::ERROR_STATE:
-            break;
-        case AppState::CAL_ZERO:
-            state_ = AppState::CAL_SPAN;  // unused placeholder
-            break;
+    // --- dynamic cutoff during measuring ---
+    if (state_ == AppState::MEASURING) {
+        float v = sc_->vHatMgps();   // mg/s
+        float a = sc_->aHatMgps2();  // mg/s^2
+        float tau = (TAU_MEAS_MS + TAU_COMM_MS + TAU_EXTRA_MS) / 1000.0f;  // s
+        // dynamic offset (mg)
+        float offset_dyn =
+            v * tau + 0.5f * a * tau * tau + k_v_mg_per_gps_ * (v / 1000.0f);
+        int32_t effective = setpoint_mg_ - (int32_t)lroundf(offset_dyn);
+
+        if (sc_->fastMg() + HYSTERESIS_MG >= effective ||
+            millis() > tMeasureUntil_) {
+            // capture v at stop for learning
+            last_v_stop_gps_ = sc_->flowGps();
+            rel_->set(false);
+            state_ = AppState::DONE_HOLD;
+            tDoneUntil_ = millis() + DONE_HOLD_MS;
+        }
     }
 
-    // --- display (hint overlay) ---
+    // --- learning at end of run ---
+    if (state_ == AppState::DONE_HOLD && millis() > tDoneUntil_) {
+        // compute overshoot (mg) using slow/stable reading
+        int32_t final_mg = sc_->filteredMg();
+        int32_t eps_mg = final_mg - setpoint_mg_;
+        float v = fabsf(last_v_stop_gps_);
+        if (v < V_MIN_GPS) v = V_MIN_GPS;
+        // Update k_v (mg per g/s) with EMA toward eps/v
+        float target_kv = (float)eps_mg / v;
+        k_v_mg_per_gps_ =
+            (1.0f - KV_EMA_ALPHA) * k_v_mg_per_gps_ + KV_EMA_ALPHA * target_kv;
+        storage::saveKv((int32_t)lroundf(k_v_mg_per_gps_));
+
+        // reset sampling back to idle rate and return to IDLE
+        sc_->setSamplePeriodMs(HX711_PERIOD_IDLE_MS);
+        state_ = AppState::IDLE;
+    }
+
+    // --- display throttle & overlay ---
     if (millis() < hintUntil) {
         disp_->showHintHold();
         return;
     }
 
-    // --- display ---
-    if (!sc_->ok()) {
+    uint32_t dispPeriod =
+        (state_ == AppState::MEASURING) ? DISPLAY_MEAS_MS : DISPLAY_IDLE_MS;
+    if (millis() < tDispNext_) return;
+    tDispNext_ = millis() + dispPeriod;
+
+    // --- display with error debounce ---
+    bool showErr = (!sc_->ok()) && (errSince != 0) &&
+                   ((millis() - errSince) > ERROR_DISPLAY_DEBOUNCE_MS);
+    if (showErr) {
         disp_->showError();
     } else if (state_ == AppState::SHOW_SETPOINT) {
         disp_->showSetpointMg(setpoint_mg_);
     } else if (state_ == AppState::CAL_SPAN) {
         disp_->showCalSpan();
-    } else if (state_ == AppState::DONE_HOLD && millis() < calDoneUntil) {
+    } else if (state_ == AppState::DONE_HOLD && millis() < tDoneUntil_) {
         disp_->showCalDone();
-    } else if (state_ == AppState::DONE_HOLD || state_ == AppState::MEASURING ||
-               state_ == AppState::IDLE) {
+    } else {  // IDLE/MEASURING
         disp_->showWeightMg(sc_->filteredMg(), sc_->isStable());
-    } else {
-        disp_->showError();
     }
 }

@@ -23,21 +23,30 @@ constexpr uint8_t PIN_RELAY_LED = 2;
 // If your module is wired right-to-left, keep true. Flip if your digits appear mirrored.
 constexpr bool DISPLAY_RIGHT_TO_LEFT = true;
 constexpr uint8_t DISPLAY_INTENSITY  = 4;   // 0..15
+constexpr uint32_t DISPLAY_IDLE_MS   = 1000/15; // ~15 Hz idle
+constexpr uint32_t DISPLAY_MEAS_MS   = 1000/20; // ~20 Hz while measuring
 
 // ---------------- Scale & filtering ----------------
 // Compile-time offsets
-constexpr int32_t CUTOFF_OFFSET_MG      = 1000;     // stop early by this many mg (0.3 g => 300)
 constexpr int32_t SCALE_OFFSET_COUNTS   = -326407;  // raw baseline offset (preferred)
 // If you prefer mg-level offset after scaling, set above to 0 and use this instead.
 constexpr int32_t SCALE_OFFSET_MG       = 0;        // added after scaling
+constexpr int32_t CUTOFF_OFFSET_MG      = 0;    // legacy fixed offset (kept, but dynamic offset supersedes)
 
 // Calibration factor (Q16 fixed-point): mg per raw count << 16
 // Example: 22000/(-155332+326407) = 0.1286 mg/count => (int32)((0.1286f * 65536.0f) + 0.5f) = 9437
 constexpr int32_t CAL_MG_PER_COUNT_Q16  = (int32_t)((0.1286f * 65536.0f) + 0.5f); // <-- TUNE ME
 
-// Filtering
-constexpr uint16_t HX711_PERIOD_MS      = 100;  // ~10 SPS
-constexpr uint8_t  IIR_ALPHA_DIV        = 4;    // alpha = 1/4 = 0.25
+// HX711 sampling periods (switch at runtime)
+constexpr uint16_t HX711_PERIOD_IDLE_MS = 100; // 10 SPS for quiet, stable display
+constexpr uint16_t HX711_PERIOD_FAST_MS = 13;  // ~80 SPS during measuring
+// Non-blocking read policy: only flag error if DRDY missing for this long
+constexpr uint32_t HX711_NOTREADY_TIMEOUT_MS = 500; // prevents 'Err' flicker
+// Startup grace: ignore HX711 readiness errors for this long after boot
+constexpr uint32_t HX711_STARTUP_GRACE_MS   = 1200;
+
+// Slow display filter
+constexpr uint8_t  IIR_ALPHA_DIV        = 4;   // alpha = 1/4 = 0.25
 
 // ---------------- UX & limits ----------------
 constexpr float    SETPOINT_MAX_G       = 200.0f;
@@ -60,7 +69,7 @@ constexpr uint32_t DEBOUNCE_MS          = 25;
 
 // ---------------- Stability detection ----------------
 constexpr uint8_t  STAB_WINDOW_SAMPLES = 10;   // 1.0 s at 10 Hz
-constexpr int32_t  STAB_STDDEV_MG      = 30;   // 0.03g
+constexpr int32_t  STAB_STDDEV_MG      = 30;   // 0.03 g
 constexpr int32_t  STAB_P2P_MG         = 100;  // 0.10 g
 constexpr uint32_t STAB_DWELL_MS       = 300;  // must remain quiet for this long
 
@@ -73,6 +82,7 @@ constexpr char NVS_NAMESPACE[] = "coffee";
 constexpr char KEY_CAL_Q16[]   = "cal_q16";
 constexpr char KEY_TARE_RAW[]  = "tare_raw";
 constexpr char KEY_SETPOINT[]  = "setpoint";
+constexpr char KEY_KV[]        = "k_v";      // learned mg per (g/s)
 
 // Behavior flags
 constexpr bool REQUIRE_STABLE_FOR_TARE = true;
@@ -80,6 +90,19 @@ constexpr bool REQUIRE_STABLE_FOR_CAL  = true;
 
 // Hint timing
 constexpr uint32_t HINT_HOLD_MS        = 600;
+
+// ---------------- Dynamic cutoff model ----------------
+// Latencies (ms) used to compute offset = v*tau + 0.5*a*tau^2 + k_v*v
+constexpr uint32_t TAU_MEAS_MS = 25;   // estimator + sampling latency (fast mode)
+constexpr uint32_t TAU_COMM_MS = 80;   // smart plug OFF latency (tune to your device)
+constexpr uint32_t TAU_EXTRA_MS= 0;    // any fixed extra delay
+
+// Learning of k_v (mg per g/s)
+constexpr float KV_EMA_ALPHA   = 0.2f; // 0..1; higher -> faster adaptation
+constexpr float V_MIN_GPS      = 0.1f; // avoid division blow-up when learning
+
+// UI error debounce (avoid brief Err blips)
+constexpr uint32_t ERROR_DISPLAY_DEBOUNCE_MS = 250;
 
 // ---------------- WiFi & FRITZ!Box AHA ----------------
 // #define USE_WIFI      // comment out to disable WiFi and AHA relay control

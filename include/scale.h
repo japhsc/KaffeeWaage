@@ -9,14 +9,11 @@ class Scale {
     // Initialize with data pin, clock pin, and HX711
     void begin(uint8_t dtPin, uint8_t sckPin);
 
-    // Call often; samples every HX711_PERIOD_MS
+    // Call often; consumes samples when DRDY fires
     void update();
 
-    void setSamplePeriodMs(uint16_t ms);  // switch 10↔80 SPS
-
-    // Rate detection insight
-    bool fastCapable() const { return fast_capable_; }
-    uint16_t detectedPeriodMs() const { return expected_period_ms_; }
+    // Minimum spacing between processed samples (ms) to allow decimation
+    void setSamplePeriodMs(uint16_t ms);
 
     bool ok() const { return ok_; }
     void tare();
@@ -46,6 +43,12 @@ class Scale {
     int32_t calMgPerCountQ16() const { return cal_q16_; }
 
    private:
+    static void IRAM_ATTR drdyISR();
+    static Scale* instance_;
+
+    volatile bool drdy_pending_ = false;
+    uint8_t dt_pin_ = 0;
+
     HX711 hx_;
     bool ok_ = false;
     int32_t tare_raw_ = 0;
@@ -54,19 +57,8 @@ class Scale {
 
     // timing
     uint16_t period_ms_ = 100;
-    uint32_t tNext_ = 0, tPrev_ = 0;
-    uint32_t notReadySince_ = 0;
+    uint32_t last_sample_ms_ = 0;
     uint32_t bootGraceUntil_ = 0;
-
-    // dynamic not-ready timeout target
-    uint16_t expected_period_ms_ =
-        HX711_PERIOD_IDLE_MS;  // updated after rate detect
-    bool fast_capable_ = false;
-
-    // rate detection accumulators
-    uint8_t rd_count_ = 0;
-    uint32_t rd_accum_ms_ = 0;
-    uint32_t last_drdy_ms_ = 0;
 
     // slow/display filter
     int32_t buf_[3] = {0, 0, 0};

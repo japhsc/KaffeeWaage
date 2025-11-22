@@ -49,13 +49,6 @@ constexpr uint32_t HX711_STARTUP_GRACE_MS   = 1200;
 // Slow display filter
 constexpr uint8_t  IIR_ALPHA_DIV        = 4;   // alpha = 1/4 = 0.25
 
-// ---------------- Rate detection ----------------
-constexpr uint8_t  RATE_DETECT_SAMPLES  = 16;  // number of DRDY intervals to average
-constexpr uint32_t EXPECTED_80SPS_MS    = 13;
-constexpr uint32_t EXPECTED_10SPS_MS    = 100;
-constexpr uint32_t RD_MIN_MS            = 5;   // ignore absurd short intervals
-constexpr uint32_t RD_MAX_MS            = 200; // ignore absurd long intervals
-
 // ---------------- UX & limits ----------------
 constexpr float    SETPOINT_MAX_G       = 200.0f;
 constexpr int32_t  HYSTERESIS_MG        = 100;  // 0.1 g

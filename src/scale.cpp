@@ -5,23 +5,23 @@
 
 #include "utils.h"
 
+Scale* Scale::instance_ = nullptr;
+
 void Scale::begin(uint8_t dtPin, uint8_t sckPin) {
-    hx_.begin(dtPin, sckPin);
+    dt_pin_ = dtPin;
+    hx_.begin(dt_pin_, sckPin);
     delay(400);  // settle
+    instance_ = this;
+    attachInterrupt(digitalPinToInterrupt(dt_pin_), Scale::drdyISR, FALLING);
+
     ok_ = true;
     cal_q16_ = CAL_MG_PER_COUNT_Q16;  // runtime factor starts from config (Q16)
     setSamplePeriodMs(HX711_PERIOD_IDLE_MS);
     bootGraceUntil_ = millis() + HX711_STARTUP_GRACE_MS;
-    notReadySince_ = 0;
-    // rate detection init
-    expected_period_ms_ = HX711_PERIOD_IDLE_MS;
-    fast_capable_ = false;
-    rd_count_ = 0;
-    rd_accum_ms_ = 0;
-    last_drdy_ms_ = 0;
+    last_sample_ms_ = millis();
 }
 
-void Scale::setSamplePeriodMs(uint16_t ms) { period_ms_ = ms; }
+void Scale::setSamplePeriodMs(uint16_t ms) { period_ms_ = (ms == 0) ? 1 : ms; }
 
 void Scale::tare() {
     // Capture current raw as new baseline; allows negative readings later
@@ -30,55 +30,29 @@ void Scale::tare() {
 
 void Scale::update() {
     uint32_t now = millis();
-    if (now < tNext_) return;
-    if (tPrev_ == 0) tPrev_ = now;
-    uint32_t dt_ms = now - tPrev_;
-    tPrev_ = now;
-    tNext_ = now + period_ms_;
 
-    // Readiness & error policy
-    if (!hx_.is_ready()) {
-        if (notReadySince_ == 0) notReadySince_ = now;
-        // dynamic timeout based on detected/expected period
-        uint32_t dynTimeout =
-            (uint32_t)expected_period_ms_ * NOTREADY_MULT + NOTREADY_MARGIN_MS;
-        if ((now - notReadySince_) > dynTimeout && now > bootGraceUntil_)
-            ok_ = false;
-        tNext_ = now + 1;  // poll soon to catch next DRDY
-        return;
+    uint16_t timeout_base_ms =
+        (period_ms_ > HX711_PERIOD_IDLE_MS) ? period_ms_ : HX711_PERIOD_IDLE_MS;
+    uint32_t timeout_ms =
+        (uint32_t)timeout_base_ms * NOTREADY_MULT + NOTREADY_MARGIN_MS;
+    if (last_sample_ms_ != 0 && (now - last_sample_ms_) > timeout_ms &&
+        now > bootGraceUntil_) {
+        ok_ = false;
     }
-    notReadySince_ = 0;  // DRDY seen
+
+    // wait for DRDY interrupt
+    if (!drdy_pending_) return;
+
+    // enforce requested sampling period (decimate if HX711 is faster)
+    if (last_sample_ms_ != 0 && (now - last_sample_ms_) < period_ms_) return;
+
+    drdy_pending_ = false;
     ok_ = true;
 
-    // --- Rate detection (measure DRDY intervals) ---
-    if (last_drdy_ms_ != 0) {
-        uint32_t d = now - last_drdy_ms_;
-        if (d >= RD_MIN_MS && d <= RD_MAX_MS) {
-            rd_accum_ms_ += d;
-            if (rd_count_ < 255) rd_count_++;
-        }
-        if (rd_count_ >= RATE_DETECT_SAMPLES &&
-            expected_period_ms_ == HX711_PERIOD_IDLE_MS) {
-            uint32_t avg = rd_accum_ms_ / rd_count_;
-            // classify as fast if closer to 13 ms than 100 ms
-            uint32_t diffFast = (avg > EXPECTED_80SPS_MS)
-                                    ? (avg - EXPECTED_80SPS_MS)
-                                    : (EXPECTED_80SPS_MS - avg);
-            uint32_t diffSlow = (avg > EXPECTED_10SPS_MS)
-                                    ? (avg - EXPECTED_10SPS_MS)
-                                    : (EXPECTED_10SPS_MS - avg);
-            if (diffFast * 3 < diffSlow) {  // require clear win
-                expected_period_ms_ = HX711_PERIOD_FAST_MS;
-                fast_capable_ = true;
-            } else {
-                expected_period_ms_ = HX711_PERIOD_IDLE_MS;
-                fast_capable_ = false;
-            }
-        }
-    }
-    last_drdy_ms_ = now;
-
+    uint32_t prev_sample_ms = last_sample_ms_;
     int32_t raw = hx_.read();
+    last_sample_ms_ = now;
+
     raw -= SCALE_OFFSET_COUNTS;     // compile-time raw offset
     last_raw_no_tare_ = raw;        // save before tare
     weight_raw_ = raw - tare_raw_;  // allow negative
@@ -99,6 +73,7 @@ void Scale::update() {
     last_mg_ = filt_mg_;
 
     // ---- Fast α–β estimator (x,v) with accel EMA ----
+    uint32_t dt_ms = (prev_sample_ms == 0) ? period_ms_ : (now - prev_sample_ms);
     float dt = dt_ms / 1000.0f;
     if (dt <= 0.0001f) dt = period_ms_ / 1000.0f;
     // predict
@@ -167,4 +142,8 @@ void Scale::update() {
         stable_ = false;  // not enough samples yet
         stable_since_ = 0;
     }
+}
+
+void IRAM_ATTR Scale::drdyISR() {
+    if (instance_) instance_->drdy_pending_ = true;
 }

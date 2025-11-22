@@ -101,9 +101,7 @@ void Controller::update() {
                    state_ == AppState::SHOW_SETPOINT) {
             // start
             rel_->set(true);
-            // only go fast if hardware is actually 80 SPS capable
-            sc_->setSamplePeriodMs(sc_->fastCapable() ? HX711_PERIOD_FAST_MS
-                                                      : HX711_PERIOD_IDLE_MS);
+            sc_->setSamplePeriodMs(HX711_PERIOD_FAST_MS);
             state_ = AppState::MEASURING;
             tMeasureUntil_ = millis() + MEASURE_TIMEOUT_MS;
         } else if (state_ == AppState::CAL_SPAN) {

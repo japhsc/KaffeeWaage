@@ -76,5 +76,11 @@ Run inside `coffee-scale-esp32/`:
 - **Dynamic cutoff model:** During a run the fast α–β filter estimates weight, velocity, and acceleration. The controller subtracts a predicted offset `v*tau + 0.5*a*tau^2 + k_v*v` where `tau` covers HX711 + relay/plug latency (`TAU_*`) and `k_v` is learned from past overshoot (`KV_EMA_ALPHA`, bounded by `V_MIN_GPS`). `HYSTERESIS_MG` adds a buffer so the relay releases once the predicted setpoint is reached.
 - **FRITZ!Box AHA vs GPIO relay:** With `USE_WIFI` defined, the GPIO relay is replaced by WiFi control of a FRITZ!Box AHA smart plug (`FRITZ_BASE`, `FRITZ_USER`/`FRITZ_PASS`, `FRITZ_AIN`). The onboard LED pin still indicates state. Without `USE_WIFI`, the local relay pins (`PIN_RELAY`, `PIN_RELAY_LED`) drive a direct load.
 
+## :pencil: LedControl tweaks
+- Kept a local copy of `LedControl.h/.cpp` so PlatformIO doesn’t fetch the stock library (see commented `lib_deps`).
+- Added an ESP32-friendly `pgmspace` include guard and `#pragma once` to avoid AVR-only headers.
+- Expanded the PROGMEM `charTable` beyond the stock set (which only had 0–9, A–F, H, L, P, space/dash/dot) with recognizable glyphs for: `G`, `I`, `J/j`, `O`, `R`, `S`, `U/u`, `Y/y`, `Z/z`, and lowercase `a,b,c,d,e,f,g,h,i,l,n,o,p,q,r,t` plus duplicated digits and `_ . -`. That keeps UI strings (Err/Hold/Cal/WiFi hints) readable on the 7-seg display.
+- Class API remains unchanged, so it can be swapped with upstream if you prefer; only the glyph table and portability bits differ.
+
 ## :triangular_ruler: Manual calibration math (optional)
 If you prefer to calculate the factor offline: temporarily log `gScale.rawCounts()` in `Scale::update()`, record `raw0` empty and `raw1` with a known mass `m` mg. Compute `CAL_MG_PER_COUNT = m / (raw1 - raw0)` and set `CAL_MG_PER_COUNT_Q16 = mg_per_count * 65536` in `config.h`. Combine with `SCALE_OFFSET_COUNTS`/`SCALE_OFFSET_MG` as needed.

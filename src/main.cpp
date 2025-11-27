@@ -104,6 +104,7 @@ void setup() {
 
 void loop() {
     gController.update();
+
     // Tiny idle delay to keep the loop cooperative
     delay(1);
 }

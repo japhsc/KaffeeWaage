@@ -11,6 +11,7 @@ void Controller::begin(Scale* sc, Encoder* enc, Buttons* btn, Display* disp,
     btn_ = btn;
     disp_ = disp;
     rel_ = rel;
+
     // load learned k_v (mg per g/s)
     k_v_mg_per_gps_ = (float)storage::loadKv(0);
 }
@@ -48,6 +49,11 @@ void Controller::update() {
                 mg_per_count_q16 = CAL_MG_PER_COUNT_Q16;  // fallback
             sc_->setCalMgPerCountQ16(mg_per_count_q16);
             storage::saveCalQ16(mg_per_count_q16);
+
+            // Reset learned velocity term; calibration changes mg/count
+            k_v_mg_per_gps_ = 0.0f;
+            storage::saveKv(0);
+
             // brief done screen
             state_ = AppState::DONE_HOLD;
             done_from_cal_ = true;

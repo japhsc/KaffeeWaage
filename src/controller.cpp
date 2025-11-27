@@ -25,7 +25,6 @@ void Controller::update() {
 
     // --- long-press: enter/advance calibration (requires stability) ---
     static int32_t cal_raw0 = 0;  // persistent across calls
-    static uint32_t calDoneUntil = 0;
 
     if (enc_->tareLongPressed()) {
         if (REQUIRE_STABLE_FOR_CAL && !sc_->isStable()) {
@@ -51,7 +50,8 @@ void Controller::update() {
             storage::saveCalQ16(mg_per_count_q16);
             // brief done screen
             state_ = AppState::DONE_HOLD;
-            calDoneUntil = millis() + DONE_HOLD_MS;
+            done_from_cal_ = true;
+            tDoneUntil_ = millis() + DONE_HOLD_MS;
         }
     }
 
@@ -89,6 +89,7 @@ void Controller::update() {
             rel_->set(false);
             state_ = AppState::DONE_HOLD;
             tDoneUntil_ = millis() + DONE_HOLD_MS;
+            done_from_cal_ = false;
         } else if (state_ == AppState::IDLE ||
                    state_ == AppState::SHOW_SETPOINT) {
             // start
@@ -119,24 +120,28 @@ void Controller::update() {
             rel_->set(false);
             state_ = AppState::DONE_HOLD;
             tDoneUntil_ = millis() + DONE_HOLD_MS;
+            done_from_cal_ = false;
         }
     }
 
     // --- learning at end of run ---
     if (state_ == AppState::DONE_HOLD && millis() > tDoneUntil_) {
-        // compute overshoot (mg) using slow/stable reading
-        int32_t final_mg = sc_->filteredMg();
-        int32_t eps_mg = final_mg - setpoint_mg_;
-        float v = fabsf(last_v_stop_gps_);
-        if (v < V_MIN_GPS) v = V_MIN_GPS;
-        // Update k_v (mg per g/s) with EMA toward eps/v
-        float target_kv = (float)eps_mg / v;
-        k_v_mg_per_gps_ =
-            (1.0f - KV_EMA_ALPHA) * k_v_mg_per_gps_ + KV_EMA_ALPHA * target_kv;
-        storage::saveKv((int32_t)lroundf(k_v_mg_per_gps_));
+        if (!done_from_cal_) {
+            // compute overshoot (mg) using slow/stable reading
+            int32_t final_mg = sc_->filteredMg();
+            int32_t eps_mg = final_mg - setpoint_mg_;
+            float v = fabsf(last_v_stop_gps_);
+            if (v < V_MIN_GPS) v = V_MIN_GPS;
+            // Update k_v (mg per g/s) with EMA toward eps/v
+            float target_kv = (float)eps_mg / v;
+            k_v_mg_per_gps_ = (1.0f - KV_EMA_ALPHA) * k_v_mg_per_gps_ +
+                              KV_EMA_ALPHA * target_kv;
+            storage::saveKv((int32_t)lroundf(k_v_mg_per_gps_));
 
-        // reset sampling back to idle rate and return to IDLE
-        sc_->setSamplePeriodMs(HX711_PERIOD_IDLE_MS);
+            // reset sampling back to idle rate
+            sc_->setSamplePeriodMs(HX711_PERIOD_IDLE_MS);
+        }
+        done_from_cal_ = false;
         state_ = AppState::IDLE;
     }
 

@@ -98,7 +98,10 @@ void setup() {
 
     Serial.println("Coffee Scale ready.");
     Serial.println("Using persisted calibration/tare/setpoint if available.");
-    Serial.println("Dynamic cutoff enabled (80 SPS during measuring).");
+    Serial.println("HX711 samples at:");
+    Serial.printf("\t%u SPS during measuring.\n", lroundf(1000.0f/HX711_PERIOD_FAST_MS));
+    Serial.printf("\t%u SPS during idle time.\n", lroundf(1000.0f/HX711_PERIOD_IDLE_MS));
+    Serial.println("Dynamic cutoff enabled.");
 
     // Log persisted parameters for debugging/verification
     Serial.println("Persisted parameters:");

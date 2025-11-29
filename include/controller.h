@@ -14,6 +14,7 @@ class Controller {
                Relay* rel);
     void update();
     void setSetpointMg(int32_t mg) { setpoint_mg_ = mg; }
+    void setKvMgPerGps(float kv) { k_v_mg_per_gps_ = kv; }
     int32_t setpointMg() const { return setpoint_mg_; }
 
    private:

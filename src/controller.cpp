@@ -11,9 +11,6 @@ void Controller::begin(Scale* sc, Encoder* enc, Buttons* btn, Display* disp,
     btn_ = btn;
     disp_ = disp;
     rel_ = rel;
-
-    // load learned k_v (mg per g/s)
-    k_v_mg_per_gps_ = storage::loadKv(0.0f);
 }
 
 void Controller::update() {

@@ -84,6 +84,9 @@ void setup() {
     gWorker.begin();
 #endif
 
+    // For development: reset learned k_v
+    // storage::saveKv(0.0f);
+
     // Load persisted values
     int32_t q16 = storage::loadCalQ16(CAL_MG_PER_COUNT_Q16);
     gScale.setCalMgPerCountQ16(q16);
@@ -91,15 +94,25 @@ void setup() {
     gScale.setTareRaw(tareRaw);
     int32_t sp = storage::loadSetpointMg(14000);
     gController.setSetpointMg(sp);
-
-    // For development: reset learned k_v
-    // storage::saveKv(0.0f);
+    float kv = storage::loadKv(0.0f);
+    gController.setKvMgPerGps(kv);
 
     gController.begin(&gScale, &gEncoder, &gButtons, &gDisplay, &gRelay);
 
     Serial.println("Coffee Scale ready.");
     Serial.println("Using persisted calibration/tare/setpoint if available.");
     Serial.println("Dynamic cutoff enabled (80 SPS during measuring).");
+
+    // Log persisted parameters for debugging/verification
+    Serial.println("Persisted parameters:");
+    Serial.print("  cal_q16: ");
+    Serial.println(q16);
+    Serial.print("  tare_raw: ");
+    Serial.println(tareRaw);
+    Serial.print("  setpoint_mg: ");
+    Serial.println(sp);
+    Serial.print("  k_v (mg per g/s): ");
+    Serial.println(kv);
 }
 
 void loop() {

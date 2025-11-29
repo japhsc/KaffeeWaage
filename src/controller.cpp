@@ -20,8 +20,9 @@ void Controller::update() {
     btn_->update();
 
     // persistent across calls
-    static uint32_t hintUntil = 0;  // transient UI hint window
-    static int32_t cal_raw0 = 0;    // calibration zero point raw
+    static uint32_t hintUntil = 0;      // transient UI hint window
+    static int32_t cal_raw0 = 0;        // calibration zero point raw
+    static uint32_t resetKvUntil = 0;   // transient reset message window
 
     // --- long-press: enter/advance calibration (requires stability) ---
     if (enc_->tareLongPressed()) {
@@ -89,6 +90,7 @@ void Controller::update() {
     if (btn_->startLongPressed()) {
         k_v_mg_per_gps_ = 0.0f;
         storage::saveKv(0.0f);
+        resetKvUntil = millis() + SHOW_SP_MS;
     }
 
     if (btn_->startPressed()) {
@@ -172,6 +174,11 @@ void Controller::update() {
     // --- display throttle & overlay ---
     if (millis() < hintUntil) {
         disp_->showHintHold();
+        return;
+    }
+
+    if (millis() < resetKvUntil) {
+        disp_->showKvReset();
         return;
     }
 

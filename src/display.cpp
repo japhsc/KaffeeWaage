@@ -97,6 +97,14 @@ void Display::showHintHold() {
     putChar(5, 'L');
     putChar(4, 'd');
 }
+void Display::showKvReset() {
+    clear();
+    putChar(7, 'r');
+    putChar(6, 'E');
+    putChar(5, 'S');
+    putChar(4, 'E');
+    putChar(3, 't');
+}
 void Display::showStartup() {
     clear();
     putChar(7, 'C');

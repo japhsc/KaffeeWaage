@@ -12,6 +12,7 @@ class Display {
     void showCalSpan();
     void showCalDone();
     void showHintHold();
+    void showKvReset();
     void showStartup();
     void showWifiConnecting(const int attempt = 0);
     void showWifiConnected();

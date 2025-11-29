@@ -43,8 +43,6 @@ constexpr uint16_t HX711_PERIOD_FAST_MS = 12;  // ~80 SPS during measuring
 // Non-blocking read policy: dynamic timeout based on detected rate
 constexpr uint32_t NOTREADY_MULT        = 3;   // x times expected period
 constexpr uint32_t NOTREADY_MARGIN_MS   = 10;  // extra slack
-// Startup grace: ignore HX711 readiness errors for this long after boot
-constexpr uint32_t HX711_STARTUP_GRACE_MS   = 1200;
 
 // Slow display filter
 constexpr uint8_t  IIR_ALPHA_DIV        = 4;   // alpha = 1/4 = 0.25

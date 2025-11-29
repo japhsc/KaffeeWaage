@@ -58,7 +58,6 @@ class Scale {
     // timing
     uint16_t period_ms_ = 100;
     uint32_t last_sample_ms_ = 0;
-    uint32_t bootGraceUntil_ = 0;
 
     // slow/display filter
     int32_t buf_[3] = {0, 0, 0};

@@ -17,7 +17,6 @@ void Scale::begin(uint8_t dtPin, uint8_t sckPin) {
     ok_ = true;
     cal_q16_ = CAL_MG_PER_COUNT_Q16;  // runtime factor starts from config (Q16)
     setSamplePeriodMs(HX711_PERIOD_IDLE_MS);
-    bootGraceUntil_ = millis() + HX711_STARTUP_GRACE_MS;
     last_sample_ms_ = millis();
 }
 
@@ -35,8 +34,7 @@ void Scale::update() {
         (period_ms_ > HX711_PERIOD_IDLE_MS) ? period_ms_ : HX711_PERIOD_IDLE_MS;
     uint32_t timeout_ms =
         (uint32_t)timeout_base_ms * NOTREADY_MULT + NOTREADY_MARGIN_MS;
-    if (last_sample_ms_ != 0 && (now - last_sample_ms_) > timeout_ms &&
-        now > bootGraceUntil_) {
+    if (last_sample_ms_ != 0 && (now - last_sample_ms_) > timeout_ms) {
         ok_ = false;
     }
 

@@ -94,9 +94,8 @@ constexpr uint32_t HINT_HOLD_MS        = 600;
 
 // ---------------- Dynamic cutoff model ----------------
 // Latencies (ms) used to compute offset = v*tau + 0.5*a*tau^2 + k_v*v
-constexpr uint32_t TAU_MEAS_MS = 25;   // estimator + sampling latency (fast mode)
-constexpr uint32_t TAU_COMM_MS = 5;    // switch OFF latency (tune to your device)
-constexpr uint32_t TAU_EXTRA_MS= 0;    // any fixed extra delay
+constexpr uint32_t TAU_MEAS_MS = HX711_PERIOD_FAST_MS + 3;  // estimator + sampling latency (fast mode)
+constexpr uint32_t TAU_COMM_MS = 8;                         // switch OFF latency (tune to your device)
 
 // Learning of k_v (mg per g/s)
 constexpr float KV_EMA_ALPHA   = 0.2f; // 0..1; higher -> faster adaptation

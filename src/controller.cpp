@@ -119,7 +119,7 @@ void Controller::update() {
     if (state_ == AppState::MEASURING) {
         float v = sc_->vHatMgps();   // mg/s
         float a = sc_->aHatMgps2();  // mg/s^2
-        float tau = (TAU_MEAS_MS + TAU_COMM_MS + TAU_EXTRA_MS) / 1000.0f;  // s
+        float tau = (TAU_MEAS_MS + TAU_COMM_MS) / 1000.0f;  // s
         // dynamic offset (mg)
         float offset_dyn =
             v * tau + 0.5f * a * tau * tau + k_v_mg_per_gps_ * (v / 1000.0f);

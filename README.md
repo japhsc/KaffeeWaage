@@ -80,7 +80,7 @@ Run inside `KaffeeWaage/`:
 - **Scale & calibration:** `SCALE_OFFSET_COUNTS` raw baseline offset, `SCALE_OFFSET_MG` optional mg offset, `CUTOFF_OFFSET_MG` legacy fixed offset, `CAL_MG_PER_COUNT_Q16` default counts→mg factor (overridden by on-device calibration), `HX711_PERIOD_IDLE_MS`/`HX711_PERIOD_FAST_MS` sampling, `NOTREADY_MULT`/`NOTREADY_MARGIN_MS` timeout detection, `HX711_STARTUP_GRACE_MS` boot grace, `IIR_ALPHA_DIV` display smoothing, `CAL_SPAN_MASS_G` reference mass for long-press calibration.
 - **UX & limits:** `SETPOINT_MAX_G`, `HYSTERESIS_MG`, `SHOW_SP_MS`, `DONE_HOLD_MS`, `MEASURE_TIMEOUT_MS`, encoder thresholds `ENC_TPS_FAST`/`ENC_TPS_MED` and steps `ENC_STEP_SLOW_G`/`ENC_STEP_MED_G`/`ENC_STEP_FAST_G`, `DEBOUNCE_MS`, `REQUIRE_STABLE_FOR_TARE`, `REQUIRE_STABLE_FOR_CAL`, `HINT_HOLD_MS`.
 - **Stability detection:** `STAB_WINDOW_SAMPLES`, `STAB_STDDEV_MG`, `STAB_P2P_MG`, `STAB_DWELL_MS` define when readings are considered stable.
-- **Dynamic cutoff model:** `TAU_MEAS_MS`, `TAU_COMM_MS`, `TAU_EXTRA_MS` cover measurement/plug latency; `KV_EMA_ALPHA` is the learning rate for k_v; `V_MIN_GPS` is the minimum flow used when learning; `ERROR_DISPLAY_DEBOUNCE_MS` filters brief HX711 errors.
+- **Dynamic cutoff model:** `TAU_MEAS_MS`, `TAU_COMM_MS` cover measurement/plug latency; `KV_EMA_ALPHA` is the learning rate for k_v; `V_MIN_GPS` is the minimum flow used when learning; `ERROR_DISPLAY_DEBOUNCE_MS` filters brief HX711 errors.
 - **Persistence keys:** `NVS_NAMESPACE`, `KEY_CAL_Q16`, `KEY_TARE_RAW`, `KEY_SETPOINT`, `KEY_KV` only need changes if you must isolate NVS data.
 - **WiFi & FRITZ!Box AHA:** `USE_WIFI` enables WiFi mode; set `WIFI_SSID`/`WIFI_PASS`, `FRITZ_BASE`, `FRITZ_USER`/`FRITZ_PASS`, and `FRITZ_AIN` for your smart plug.
 
@@ -92,10 +92,10 @@ Run inside `KaffeeWaage/`:
 
 ## :crystal_ball: Dynamic cutoff detail and tuning
 
-- Offset math: `offset_dyn = v*tau + 0.5*a*tau^2 + k_v*(v/1000)`, with `v`/`a` in mg/s, `tau` in s (`TAU_MEAS_MS + TAU_COMM_MS + TAU_EXTRA_MS`), and `k_v` in mg per g/s. Effective target is `setpoint - offset_dyn`, then compared against `fastMg() + HYSTERESIS_MG`.
+- Offset math: `offset_dyn = v*tau + 0.5*a*tau^2 + k_v*(v/1000)`, with `v`/`a` in mg/s, `tau` in s (`TAU_MEAS_MS + TAU_COMM_MS`), and `k_v` in mg per g/s. Effective target is `setpoint - offset_dyn`, then compared against `fastMg() + HYSTERESIS_MG`.
 - Terms: `v*tau` predicts incoming mass during latency; `0.5*a*tau^2` compensates accel/decel; `k_v` is a learned bias for extra overshoot not explained by latency. `HYSTERESIS_MG` prevents chatter around the target.
 - Learning: at stop, it captures flow in g/s (`last_v_stop_gps_`) and the final stable mass. Overshoot `eps = final - setpoint` divided by flow produces a per-flow correction; that is EMA’d into `k_v` with `KV_EMA_ALPHA` (guarded by `V_MIN_GPS`) and persisted.
-- Practical tuning for premature stops (under-dosing): lower `TAU_COMM_MS` (or `TAU_EXTRA_MS`) if your relay/plug is faster; clear `k_v` to zero and let it relearn; increase `HYSTERESIS_MG` slightly if noise trips early. For overshoot, do the opposite (raise tau or `k_v`, or lower hysteresis).
+- Practical tuning for premature stops (under-dosing): lower `TAU_COMM_MS` if your relay/plug is faster; clear `k_v` to zero and let it relearn; increase `HYSTERESIS_MG` slightly if noise trips early. For overshoot, do the opposite (raise tau or `k_v`, or lower hysteresis).
 - Debugging: temporarily log `v`, `a`, `offset_dyn`, `effective`, `fastMg`, and the cutoff decision to confirm whether math or noise is pulling the cutoff early/late.
 
 ## :pencil: LedControl tweaks

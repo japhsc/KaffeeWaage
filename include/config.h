@@ -39,7 +39,7 @@ constexpr int32_t CAL_MG_PER_COUNT_Q16  = (int32_t)((0.1286f * 65536.0f) + 0.5f)
 
 // HX711 sampling periods (switch at runtime)
 constexpr uint16_t HX711_PERIOD_IDLE_MS = 100; // 10 SPS for quiet, stable display
-constexpr uint16_t HX711_PERIOD_FAST_MS = 13;  // ~80 SPS during measuring
+constexpr uint16_t HX711_PERIOD_FAST_MS = 12;  // ~80 SPS during measuring
 // Non-blocking read policy: dynamic timeout based on detected rate
 constexpr uint32_t NOTREADY_MULT        = 3;   // x times expected period
 constexpr uint32_t NOTREADY_MARGIN_MS   = 10;  // extra slack
@@ -51,7 +51,7 @@ constexpr uint8_t  IIR_ALPHA_DIV        = 4;   // alpha = 1/4 = 0.25
 
 // ---------------- UX & limits ----------------
 constexpr float    SETPOINT_MAX_G       = 200.0f;
-constexpr int32_t  HYSTERESIS_MG        = 100;  // 0.1 g
+constexpr int32_t  HYSTERESIS_MG        = 10;  // 0.01 g
 constexpr uint32_t SHOW_SP_MS           = 2000;
 constexpr uint32_t DONE_HOLD_MS         = 1500;
 constexpr uint32_t MEASURE_TIMEOUT_MS   = 30000;
@@ -94,12 +94,14 @@ constexpr uint32_t HINT_HOLD_MS        = 600;
 
 // ---------------- Dynamic cutoff model ----------------
 // Latencies (ms) used to compute offset = v*tau + 0.5*a*tau^2 + k_v*v
-constexpr uint32_t TAU_MEAS_MS = HX711_PERIOD_FAST_MS + 3;  // estimator + sampling latency (fast mode)
-constexpr uint32_t TAU_COMM_MS = 8;                         // switch OFF latency (tune to your device)
+// Derive measurement latency from fast HX711 period plus small processing slack
+constexpr uint32_t TAU_MEAS_MS = HX711_PERIOD_FAST_MS + 3;  // estimator + sampling latency
+// Optocoupler + electromechanical relay turn-off time (empirical 8–10 ms)
+constexpr uint32_t TAU_COMM_MS = 9;                         // switch OFF latency (tune to your device)
 
 // Learning of k_v (mg per g/s)
-constexpr float KV_EMA_ALPHA   = 0.2f; // 0..1; higher -> faster adaptation
-constexpr float V_MIN_GPS      = 0.1f; // avoid division blow-up when learning
+constexpr float KV_EMA_ALPHA   = 0.2f;      // 0..1; higher -> faster adaptation
+constexpr float V_MIN_GPS      = 0.15f;     // avoid division blow-up when learning (bursty grinder flow)
 
 // UI error debounce (avoid brief Err blips)
 constexpr uint32_t ERROR_DISPLAY_DEBOUNCE_MS = 250;

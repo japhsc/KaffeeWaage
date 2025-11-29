@@ -22,11 +22,11 @@ void Controller::update() {
     enc_->update();
     btn_->update();
 
+    // persistent across calls
     static uint32_t hintUntil = 0;  // transient UI hint window
+    static int32_t cal_raw0 = 0;    // calibration zero point raw
 
     // --- long-press: enter/advance calibration (requires stability) ---
-    static int32_t cal_raw0 = 0;  // persistent across calls
-
     if (enc_->tareLongPressed()) {
         if (REQUIRE_STABLE_FOR_CAL && !sc_->isStable()) {
             hintUntil = millis() + HINT_HOLD_MS;  // show HOLD
@@ -36,16 +36,15 @@ void Controller::update() {
             cal_raw0 = sc_->rawNoTare();
             state_ = AppState::CAL_SPAN;
         } else if (state_ == AppState::CAL_SPAN) {
-            // Capture span point, compute factor (Q16): mg_per_count_q16 =
-            // (span_mg << 16) / dcounts
+            // Capture span point, compute factor (Q16)
             int32_t raw1 = sc_->rawNoTare();
             int32_t dcounts = raw1 - cal_raw0;
             if (dcounts == 0) dcounts = 1;
             int32_t span_mg = lround_mg(CAL_SPAN_MASS_G);
             int64_t num = ((int64_t)span_mg) << 16;
             int32_t mg_per_count_q16 = (int32_t)(num / (int64_t)dcounts);
-            if (mg_per_count_q16 <= 0)
-                mg_per_count_q16 = CAL_MG_PER_COUNT_Q16;  // fallback
+            // fallback to default if invalid
+            if (mg_per_count_q16 <= 0) mg_per_count_q16 = CAL_MG_PER_COUNT_Q16;
             sc_->setCalMgPerCountQ16(mg_per_count_q16);
             storage::saveCalQ16(mg_per_count_q16);
 

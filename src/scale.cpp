@@ -87,7 +87,8 @@ void Scale::update() {
     last_mg_ = filt_mg_;
 
     // ---- Fast α–β estimator (x,v) with accel EMA ----
-    uint32_t dt_ms = (prev_sample_ms == 0) ? period_ms_ : (now - prev_sample_ms);
+    uint32_t dt_ms =
+        (prev_sample_ms == 0) ? period_ms_ : (now - prev_sample_ms);
     float dt = dt_ms / 1000.0f;
     if (dt <= 0.0001f) dt = period_ms_ / 1000.0f;
     // predict
@@ -128,8 +129,7 @@ void Scale::update() {
             var_sum += diff * diff;
         }
 
-        // Population variance (divide by N); use N-1 if you want sample
-        // variance
+        // Population variance (divide by N)
         float var = var_sum / STAB_WINDOW_SAMPLES;
         if (var < 0.0f) var = 0.0f;
 

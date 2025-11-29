@@ -43,8 +43,7 @@ void Controller::update() {
             if (dcounts == 0) dcounts = 1;
             int32_t span_mg = lround_mg(CAL_SPAN_MASS_G);
             int64_t num = ((int64_t)span_mg) << 16;
-            int32_t mg_per_count_q16 =
-                (int32_t)(num / (int64_t)((dcounts > 0) ? dcounts : -dcounts));
+            int32_t mg_per_count_q16 = (int32_t)(num / (int64_t)dcounts);
             if (mg_per_count_q16 <= 0)
                 mg_per_count_q16 = CAL_MG_PER_COUNT_Q16;  // fallback
             sc_->setCalMgPerCountQ16(mg_per_count_q16);

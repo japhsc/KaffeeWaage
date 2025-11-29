@@ -91,6 +91,7 @@ void Controller::update() {
             rel_->set(false);
             state_ = AppState::DONE_HOLD;
             done_from_cal_ = false;
+            stopped_manually_ = true;
 
             tMeasureDoneUntil_ = millis() + DONE_HOLD_MS;
         } else if (state_ == AppState::IDLE ||
@@ -99,6 +100,7 @@ void Controller::update() {
             rel_->set(true);
             sc_->setSamplePeriodMs(HX711_PERIOD_FAST_MS);
             state_ = AppState::MEASURING;
+            stopped_manually_ = false;
             tMeasureUntil_ = millis() + MEASURE_TIMEOUT_MS;
         } else if (state_ == AppState::CAL_SPAN) {
             // allow abort of calibration with start button
@@ -116,13 +118,14 @@ void Controller::update() {
             v * tau + 0.5f * a * tau * tau + k_v_mg_per_gps_ * (v / 1000.0f);
         int32_t effective = setpoint_mg_ - (int32_t)lroundf(offset_dyn);
 
-        if (sc_->fastMg() + HYSTERESIS_MG >= effective ||
-            millis() > tMeasureUntil_) {
+        bool timed_out = millis() > tMeasureUntil_;
+        if (sc_->fastMg() + HYSTERESIS_MG >= effective || timed_out) {
             // capture v at stop for learning
             last_v_stop_gps_ = sc_->flowGps();
             rel_->set(false);
             state_ = AppState::DONE_HOLD;
             done_from_cal_ = false;
+            timed_out_ = timed_out;
 
             tMeasureDoneUntil_ = millis() + DONE_HOLD_MS;
         }
@@ -133,25 +136,31 @@ void Controller::update() {
 
     if (state_ == AppState::DONE_HOLD && millis() > tDoneUntil_) {
         if (!done_from_cal_) {
-            // compute overshoot (mg) using slow/stable reading
-            int32_t final_mg = sc_->filteredMg();
+            if (!stopped_manually_ && !timed_out_) {
+                // compute overshoot (mg) using slow/stable reading
+                int32_t final_mg = sc_->filteredMg();
 
-            // Using fastMg for control
-            // int32_t final_mg = sc_->fastMg();
+                // Using fastMg for control
+                // int32_t final_mg = sc_->fastMg();
 
-            int32_t eps_mg = final_mg - setpoint_mg_;
-            float v = fabsf(last_v_stop_gps_);
-            if (v < V_MIN_GPS) v = V_MIN_GPS;
-            // Update k_v (mg per g/s) with EMA toward eps/v
-            float target_kv = (float)eps_mg / v;
-            k_v_mg_per_gps_ = (1.0f - KV_EMA_ALPHA) * k_v_mg_per_gps_ +
-                              KV_EMA_ALPHA * target_kv;
-            storage::saveKv(k_v_mg_per_gps_);
+                // error and flow rate at the end of the run
+                int32_t eps_mg = final_mg - setpoint_mg_;
+                float v = fabsf(last_v_stop_gps_);
+                if (v < V_MIN_GPS) v = V_MIN_GPS;
+
+                // Update k_v (mg per g/s) with EMA toward eps/v
+                float target_kv = (float)eps_mg / v;
+                k_v_mg_per_gps_ = (1.0f - KV_EMA_ALPHA) * k_v_mg_per_gps_ +
+                                  KV_EMA_ALPHA * target_kv;
+                storage::saveKv(k_v_mg_per_gps_);
+            }
 
             // reset sampling back to idle rate
             sc_->setSamplePeriodMs(HX711_PERIOD_IDLE_MS);
         }
         done_from_cal_ = false;
+        stopped_manually_ = false;
+        timed_out_ = false;
         state_ = AppState::IDLE;
     }
 

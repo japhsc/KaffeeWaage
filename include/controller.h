@@ -31,6 +31,8 @@ class Controller {
     uint32_t tMeasureDoneUntil_ = 0;
     uint32_t tCalDoneUntil_ = 0;
     bool done_from_cal_ = false;
+    bool stopped_manually_ = false;
+    bool timed_out_ = false;
 
     // Learned spin-down coefficient (mg per g/s)
     float k_v_mg_per_gps_ = 0.0f;

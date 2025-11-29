@@ -13,6 +13,9 @@
         "initializer_list": "cpp",
         "span": "cpp",
         "text_encoding": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "memory": "cpp",
+        "mutex": "cpp",
+        "thread": "cpp"
     }
 }

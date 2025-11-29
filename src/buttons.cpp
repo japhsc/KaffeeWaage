@@ -2,6 +2,8 @@
 
 #include "config.h"
 
+Buttons::Buttons(uint32_t longPressMs) : long_press_ms_(longPressMs) {}
+
 void Buttons::begin(uint8_t pinStart) {
     ps_ = pinStart;
     pinMode(ps_, INPUT_PULLUP);
@@ -31,7 +33,7 @@ void Buttons::update() {
 
     // long press detection
     if (pressed_ && !long_edge_ && !long_latched_ &&
-        (millis() - pressed_since_) >= ENC_LONGPRESS_MS) {
+        (millis() - pressed_since_) >= long_press_ms_) {
         long_edge_ = true;
         long_latched_ = true;
         edge_ = false;  // suppress short press for this hold

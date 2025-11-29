@@ -21,7 +21,7 @@
 
 Scale gScale;
 Encoder gEncoder;
-Buttons gButtons;
+Buttons gButtons(ENC_LONGPRESS_MS);
 Display gDisplay;
 Controller gController;
 

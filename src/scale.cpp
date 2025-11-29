@@ -119,22 +119,22 @@ void Scale::update() {
             if (v < mn) mn = v;
             if (v > mx) mx = v;
         }
-        double mean = (double)sum / STAB_WINDOW_SAMPLES;
+        float mean = (float)sum / STAB_WINDOW_SAMPLES;
 
         // Compute variance
-        double var_sum = 0.0;
+        float var_sum = 0.0f;
         for (uint8_t i = 0; i < STAB_WINDOW_SAMPLES; ++i) {
-            double diff = win_[i] - mean;
+            float diff = win_[i] - mean;
             var_sum += diff * diff;
         }
 
         // Population variance (divide by N); use N-1 if you want sample
         // variance
-        double var = var_sum / STAB_WINDOW_SAMPLES;
-        if (var < 0.0) var = 0.0;
+        float var = var_sum / STAB_WINDOW_SAMPLES;
+        if (var < 0.0f) var = 0.0f;
 
         // Standard deviation
-        int32_t stdmg = (int32_t)std::sqrt(var);
+        int32_t stdmg = (int32_t)sqrtf(var);
 
         // Peak-to-peak
         int32_t p2p = mx - mn;

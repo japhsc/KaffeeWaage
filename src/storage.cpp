@@ -18,6 +18,6 @@ void saveTareRaw(int32_t v) { prefs.putInt(KEY_TARE_RAW, v); }
 int32_t loadSetpointMg(int32_t def) { return prefs.getInt(KEY_SETPOINT, def); }
 void saveSetpointMg(int32_t v) { prefs.putInt(KEY_SETPOINT, v); }
 
-int32_t loadKv(int32_t def) { return prefs.getInt(KEY_KV, def); }
-void saveKv(int32_t v) { prefs.putInt(KEY_KV, v); }
+float loadKv(float def) { return prefs.getFloat(KEY_KV, def); }
+void saveKv(float v) { prefs.putFloat(KEY_KV, v); }
 }  // namespace storage

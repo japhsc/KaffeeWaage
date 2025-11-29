@@ -13,7 +13,7 @@ void Controller::begin(Scale* sc, Encoder* enc, Buttons* btn, Display* disp,
     rel_ = rel;
 
     // load learned k_v (mg per g/s)
-    k_v_mg_per_gps_ = (float)storage::loadKv(0);
+    k_v_mg_per_gps_ = storage::loadKv(0.0f);
 }
 
 void Controller::update() {
@@ -50,7 +50,7 @@ void Controller::update() {
 
             // Reset learned velocity term; calibration changes mg/count
             k_v_mg_per_gps_ = 0.0f;
-            storage::saveKv(0);
+            storage::saveKv(0.0f);
 
             // brief done screen
             state_ = AppState::DONE_HOLD;
@@ -138,6 +138,10 @@ void Controller::update() {
         if (!done_from_cal_) {
             // compute overshoot (mg) using slow/stable reading
             int32_t final_mg = sc_->filteredMg();
+
+            // Using fastMg for control
+            // int32_t final_mg = sc_->fastMg();
+
             int32_t eps_mg = final_mg - setpoint_mg_;
             float v = fabsf(last_v_stop_gps_);
             if (v < V_MIN_GPS) v = V_MIN_GPS;
@@ -145,7 +149,7 @@ void Controller::update() {
             float target_kv = (float)eps_mg / v;
             k_v_mg_per_gps_ = (1.0f - KV_EMA_ALPHA) * k_v_mg_per_gps_ +
                               KV_EMA_ALPHA * target_kv;
-            storage::saveKv((int32_t)lroundf(k_v_mg_per_gps_));
+            storage::saveKv(k_v_mg_per_gps_);
 
             // reset sampling back to idle rate
             sc_->setSamplePeriodMs(HX711_PERIOD_IDLE_MS);

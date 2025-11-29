@@ -93,7 +93,7 @@ void setup() {
     gController.setSetpointMg(sp);
 
     // For development: reset learned k_v
-    // storage::saveKv(0);
+    // storage::saveKv(0.0f);
 
     gController.begin(&gScale, &gEncoder, &gButtons, &gDisplay, &gRelay);
 

@@ -9,6 +9,6 @@ int32_t loadTareRaw(int32_t def);
 void saveTareRaw(int32_t v);
 int32_t loadSetpointMg(int32_t def);
 void saveSetpointMg(int32_t v);
-int32_t loadKv(int32_t def);
-void saveKv(int32_t v);
+float loadKv(float def);
+void saveKv(float v);
 }  // namespace storage

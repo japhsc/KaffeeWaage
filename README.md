@@ -59,7 +59,7 @@ Most breakout boards ship the HX711 in 10 SPS mode (RATE pin tied to GND). For f
 
 ## :rocket: Build & flash (PlatformIO)
 
-Run inside `KaffeeWaage/`:
+Run inside the repo root:
 
 - `pio run` (build)
 - `pio run -t upload` (flash)
@@ -70,6 +70,7 @@ Run inside `KaffeeWaage/`:
 - Tare: short-press the encoder. With `REQUIRE_STABLE_FOR_TARE` the scale must be quiet; tare is saved to NVS.
 - Setpoint: turn the encoder; the value is stored automatically after a short timeout. Default max is `SETPOINT_MAX_G`.
 - Start/stop: press the start button. While measuring, HX711 sampling speeds up, the relay energizes, and the cutoff uses velocity/accel prediction plus hysteresis. Press again to cancel early.
+- Reset learned overshoot bias: long-press the start button to clear the learned `k_v` term (useful after recalibration or hardware changes); the display shows `rESEt`.
 - Calibration: long-press the encoder (~1.5 s). First long-press captures zero, then place a known weight (`CAL_SPAN_MASS_G`, default 22 g) and long-press again to store the new factor in NVS.
 - WiFi mode: uncomment `USE_WIFI` and set credentials to drive a FRITZ!Box AHA plug instead of the GPIO relay; WiFi status is shown on the display.
 

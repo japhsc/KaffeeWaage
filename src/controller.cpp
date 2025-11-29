@@ -86,6 +86,11 @@ void Controller::update() {
     }
 
     // --- start/stop ---
+    if (btn_->startLongPressed()) {
+        k_v_mg_per_gps_ = 0.0f;
+        storage::saveKv(0.0f);
+    }
+
     if (btn_->startPressed()) {
         if (state_ == AppState::MEASURING) {
             rel_->set(false);

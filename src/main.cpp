@@ -84,9 +84,6 @@ void setup() {
     gWorker.begin();
 #endif
 
-    // For development: reset learned k_v
-    // storage::saveKv(0.0f);
-
     // Load persisted values
     int32_t q16 = storage::loadCalQ16(CAL_MG_PER_COUNT_Q16);
     gScale.setCalMgPerCountQ16(q16);

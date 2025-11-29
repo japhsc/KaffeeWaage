@@ -76,6 +76,13 @@ Run inside `KaffeeWaage/`:
 - **Dynamic cutoff model:** During a run the fast α–β filter estimates weight, velocity, and acceleration. The controller subtracts a predicted offset `v*tau + 0.5*a*tau^2 + k_v*v` where `tau` covers HX711 + relay/plug latency (`TAU_*`) and `k_v` is learned from past overshoot (`KV_EMA_ALPHA`, bounded by `V_MIN_GPS`). `HYSTERESIS_MG` adds a buffer so the relay releases once the predicted setpoint is reached.
 - **FRITZ!Box AHA vs GPIO relay:** With `USE_WIFI` defined, the GPIO relay is replaced by WiFi control of a FRITZ!Box AHA smart plug (`FRITZ_BASE`, `FRITZ_USER`/`FRITZ_PASS`, `FRITZ_AIN`). The onboard LED pin still indicates state. Without `USE_WIFI`, the local relay pins (`PIN_RELAY`, `PIN_RELAY_LED`) drive a direct load.
 
+## :crystal_ball: Dynamic cutoff detail and tuning
+- Offset math: `offset_dyn = v*tau + 0.5*a*tau^2 + k_v*(v/1000)`, with `v`/`a` in mg/s, `tau` in s (`TAU_MEAS_MS + TAU_COMM_MS + TAU_EXTRA_MS`), and `k_v` in mg per g/s. Effective target is `setpoint - offset_dyn`, then compared against `fastMg() + HYSTERESIS_MG`.
+- Terms: `v*tau` predicts incoming mass during latency; `0.5*a*tau^2` compensates accel/decel; `k_v` is a learned bias for extra overshoot not explained by latency. `HYSTERESIS_MG` prevents chatter around the target.
+- Learning: at stop, it captures flow in g/s (`last_v_stop_gps_`) and the final stable mass. Overshoot `eps = final - setpoint` divided by flow produces a per-flow correction; that is EMA’d into `k_v` with `KV_EMA_ALPHA` (guarded by `V_MIN_GPS`) and persisted.
+- Practical tuning for premature stops (under-dosing): lower `TAU_COMM_MS` (or `TAU_EXTRA_MS`) if your relay/plug is faster; clear `k_v` to zero and let it relearn; increase `HYSTERESIS_MG` slightly if noise trips early. For overshoot, do the opposite (raise tau or `k_v`, or lower hysteresis).
+- Debugging: temporarily log `v`, `a`, `offset_dyn`, `effective`, `fastMg`, and the cutoff decision to confirm whether math or noise is pulling the cutoff early/late.
+
 ## :pencil: LedControl tweaks
 - Kept a local copy of `LedControl.h/.cpp` so PlatformIO doesn’t fetch the stock library (see commented `lib_deps`).
 - Added an ESP32-friendly `pgmspace` include guard and `#pragma once` to avoid AVR-only headers.

@@ -31,7 +31,7 @@ constexpr uint32_t DISPLAY_MEAS_MS   = 1000/20; // ~20 Hz while measuring
 constexpr int32_t SCALE_OFFSET_COUNTS   = -326407;  // raw baseline offset (preferred)
 // If you prefer mg-level offset after scaling, set above to 0 and use this instead.
 constexpr int32_t SCALE_OFFSET_MG       = 0;        // added after scaling
-constexpr int32_t CUTOFF_OFFSET_MG      = 0;    // legacy fixed offset (kept, but dynamic offset supersedes)
+constexpr int32_t CUTOFF_OFFSET_MG      = 0;        // legacy fixed offset (kept, but dynamic offset supersedes)
 
 // Calibration factor (Q16 fixed-point): mg per raw count << 16
 // Example: 22000/(-155332+326407) = 0.1286 mg/count => (int32)((0.1286f * 65536.0f) + 0.5f) = 9437
@@ -73,7 +73,7 @@ constexpr int32_t  STAB_P2P_MG         = 100;  // 0.10 g
 constexpr uint32_t STAB_DWELL_MS       = 300;  // must remain quiet for this long
 
 // ---------------- Calibration (long-press flow) ----------------
-constexpr uint32_t ENC_LONGPRESS_MS     = 1500; // hold encoder SW this long
+constexpr uint32_t UI_LONGPRESS_MS      = 1500;  // common long-press duration for UI buttons
 constexpr float    CAL_SPAN_MASS_G      = 22.0f; // known weight for span step, e.g. 22g
 
 // ---------------- Persistence (NVS) ----------------

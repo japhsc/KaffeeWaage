@@ -20,8 +20,8 @@
 #include "switch.h"
 
 Scale gScale;
-Encoder gEncoder;
-Buttons gButtons(ENC_LONGPRESS_MS);
+Encoder gEncoder(UI_LONGPRESS_MS);
+Buttons gButtons(UI_LONGPRESS_MS);
 Display gDisplay;
 Controller gController;
 

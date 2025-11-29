@@ -25,7 +25,7 @@ void Controller::update() {
     static uint32_t resetKvUntil = 0;   // transient reset message window
 
     // --- long-press: enter/advance calibration (requires stability) ---
-    if (enc_->tareLongPressed()) {
+    if (enc_->buttonLongPress()) {
         if (REQUIRE_STABLE_FOR_CAL && !sc_->isStable()) {
             hintUntil = millis() + HINT_HOLD_MS;  // show HOLD
         } else if (state_ == AppState::IDLE ||
@@ -74,7 +74,7 @@ void Controller::update() {
     }
 
     // --- tare (short press) ---
-    if (enc_->tarePressed()) {
+    if (enc_->buttonShortPress()) {
         bool measuring = (state_ == AppState::MEASURING);
         if (measuring) {
             hintUntil = millis() + HINT_HOLD_MS;  // blocked during measuring
@@ -87,13 +87,13 @@ void Controller::update() {
     }
 
     // --- start/stop ---
-    if (btn_->startLongPressed()) {
+    if (btn_->longPress()) {
         k_v_mg_per_gps_ = 0.0f;
         storage::saveKv(0.0f);
         resetKvUntil = millis() + SHOW_SP_MS;
     }
 
-    if (btn_->startPressed()) {
+    if (btn_->shortPress()) {
         if (state_ == AppState::MEASURING) {
             rel_->set(false);
             state_ = AppState::DONE_HOLD;

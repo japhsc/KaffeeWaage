@@ -3,14 +3,16 @@
 #include "config.h"
 #include "utils.h"
 
+Encoder::Encoder(uint32_t buttonLongPressMs) : button_(buttonLongPressMs) {}
+
 void Encoder::begin(uint8_t pinA, uint8_t pinB, uint8_t pinSW) {
     pa_ = pinA;
     pb_ = pinB;
     psw_ = pinSW;
     pinMode(pa_, INPUT_PULLUP);
     pinMode(pb_, INPUT_PULLUP);
-    pinMode(psw_, INPUT_PULLUP);
     prev_ = (digitalRead(pa_) << 1) | digitalRead(pb_);
+    button_.begin(psw_);
 }
 
 void Encoder::update() {
@@ -40,33 +42,7 @@ void Encoder::update() {
     }
 
     // --- SW debounce & press type ---
-    bool v = digitalRead(psw_);
-    if (v != swLast_) {
-        swT_ = millis();
-        swLast_ = v;
-    }
-    if ((millis() - swT_) > DEBOUNCE_MS && v != swStable_) {
-        swStable_ = v;
-        if (swStable_ == LOW) {  // pressed
-            swDown_ = true;
-            swDownMs_ = millis();
-            longReported_ = false;
-        } else {  // released
-            if (swDown_) {
-                uint32_t held = millis() - swDownMs_;
-                if (!longReported_ && held >= DEBOUNCE_MS) shortEdge_ = true;
-            }
-            swDown_ = false;
-            longReported_ = false;
-        }
-    }
-
-    if (swDown_ && !longReported_) {
-        if (millis() - swDownMs_ >= ENC_LONGPRESS_MS) {
-            longReported_ = true;
-            longEdge_ = true;
-        }
-    }
+    button_.update();
 }
 
 int32_t Encoder::consumeDeltaMg() {
@@ -75,18 +51,6 @@ int32_t Encoder::consumeDeltaMg() {
     return d;
 }
 
-bool Encoder::tarePressed() {
-    if (shortEdge_) {
-        shortEdge_ = false;
-        return true;
-    }
-    return false;
-}
+bool Encoder::buttonShortPress() { return button_.shortPress(); }
 
-bool Encoder::tareLongPressed() {
-    if (longEdge_) {
-        longEdge_ = false;
-        return true;
-    }
-    return false;
-}
+bool Encoder::buttonLongPress() { return button_.longPress(); }

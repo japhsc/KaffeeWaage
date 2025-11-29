@@ -40,7 +40,7 @@ void Buttons::update() {
     }
 }
 
-bool Buttons::startPressed() {
+bool Buttons::shortPress() {
     if (edge_) {
         edge_ = false;
         return true;
@@ -48,7 +48,7 @@ bool Buttons::startPressed() {
     return false;
 }
 
-bool Buttons::startLongPressed() {
+bool Buttons::longPress() {
     if (long_edge_) {
         long_edge_ = false;
         return true;

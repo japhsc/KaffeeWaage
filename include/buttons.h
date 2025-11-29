@@ -6,8 +6,8 @@ class Buttons {
     explicit Buttons(uint32_t longPressMs);
     void begin(uint8_t pinStart);
     void update();
-    bool startPressed();
-    bool startLongPressed();
+    bool shortPress();
+    bool longPress();
 
    private:
     uint32_t long_press_ms_;

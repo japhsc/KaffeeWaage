@@ -24,7 +24,11 @@ class Controller {
     Relay* rel_ = nullptr;
     AppState state_ = AppState::IDLE;
     int32_t setpoint_mg_ = 14000;  // default 14.0 g
-    uint32_t tShowUntil_ = 0, tMeasureUntil_ = 0, tDoneUntil_ = 0;
+
+    uint32_t tShowUntil_ = 0;
+    uint32_t tMeasureUntil_ = 0;
+    uint32_t tMeasureDoneUntil_ = 0;
+    uint32_t tCalDoneUntil_ = 0;
     bool done_from_cal_ = false;
 
     // Learned spin-down coefficient (mg per g/s)

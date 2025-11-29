@@ -55,7 +55,8 @@ void Controller::update() {
             // brief done screen
             state_ = AppState::DONE_HOLD;
             done_from_cal_ = true;
-            tDoneUntil_ = millis() + DONE_HOLD_MS;
+
+            tCalDoneUntil_ = millis() + DONE_HOLD_MS;
         }
     }
 
@@ -92,8 +93,9 @@ void Controller::update() {
         if (state_ == AppState::MEASURING) {
             rel_->set(false);
             state_ = AppState::DONE_HOLD;
-            tDoneUntil_ = millis() + DONE_HOLD_MS;
             done_from_cal_ = false;
+
+            tMeasureDoneUntil_ = millis() + DONE_HOLD_MS;
         } else if (state_ == AppState::IDLE ||
                    state_ == AppState::SHOW_SETPOINT) {
             // start
@@ -123,12 +125,15 @@ void Controller::update() {
             last_v_stop_gps_ = sc_->flowGps();
             rel_->set(false);
             state_ = AppState::DONE_HOLD;
-            tDoneUntil_ = millis() + DONE_HOLD_MS;
             done_from_cal_ = false;
+
+            tMeasureDoneUntil_ = millis() + DONE_HOLD_MS;
         }
     }
 
     // --- learning at end of run ---
+    uint32_t tDoneUntil_ = done_from_cal_ ? tCalDoneUntil_ : tMeasureDoneUntil_;
+
     if (state_ == AppState::DONE_HOLD && millis() > tDoneUntil_) {
         if (!done_from_cal_) {
             // compute overshoot (mg) using slow/stable reading
@@ -155,6 +160,10 @@ void Controller::update() {
         return;
     }
 
+    // Determine the relevant done timer for display
+    uint32_t tDisplayDoneUntil =
+        done_from_cal_ ? tCalDoneUntil_ : tMeasureDoneUntil_;
+
     uint32_t dispPeriod =
         (state_ == AppState::MEASURING) ? DISPLAY_MEAS_MS : DISPLAY_IDLE_MS;
     if (millis() < tDispNext_) return;
@@ -167,7 +176,7 @@ void Controller::update() {
         disp_->showSetpointMg(setpoint_mg_);
     } else if (state_ == AppState::CAL_SPAN) {
         disp_->showCalSpan();
-    } else if (state_ == AppState::DONE_HOLD && millis() < tDoneUntil_) {
+    } else if (state_ == AppState::DONE_HOLD && millis() < tDisplayDoneUntil) {
         disp_->showCalDone();
     } else {  // IDLE/MEASURING
         disp_->showWeightMg(sc_->filteredMg(), sc_->isStable());

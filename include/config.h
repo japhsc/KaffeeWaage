@@ -52,7 +52,7 @@ constexpr float    SETPOINT_MAX_G       = 200.0f;
 constexpr int32_t  HYSTERESIS_MG        = 10;  // 0.01 g
 constexpr uint32_t SHOW_SP_MS           = 2000;
 constexpr uint32_t DONE_HOLD_MS         = 1500;
-constexpr uint32_t MEASURE_TIMEOUT_MS   = 30000;
+constexpr uint32_t MEASURE_TIMEOUT_MS   = 20000;
 
 // Encoder acceleration (ticks per second thresholds)
 constexpr float ENC_TPS_FAST  = 100.0f; // > fast => 1.0 g
